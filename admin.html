@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>관리자 · 슬기로운 배구생활</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--navy:#14213D;--navy-2:#1F2F52;--navy-3:#2A3E68;--coral:#FF6B4A;--coral-d:#E8542E;--coral-l:#FFE9E2;--teal:#1FA98F;--teal-l:#E4F7F3;--amber-l:#FFF3DD;--info:#6D5BD0;--info-l:#EFEAFB;--bg:#EEF1F6;--line:#E2E7EF;--text:#182236;--dim:#6B7688}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);margin:0;font-size:14.5px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.disp{font-family:'Barlow Condensed','Noto Sans KR',sans-serif}
+.hidden{display:none!important}
+header{background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;padding-top:env(safe-area-inset-top);position:sticky;top:0;z-index:30}
+header .in{max-width:1180px;margin:0 auto;padding:0 16px;height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header .t{font-weight:800;font-size:19px;display:flex;align-items:center;gap:8px}
+header .t i{color:var(--coral)}
+header .r{display:flex;gap:8px;align-items:center;font-size:13px}
+header a,header button{color:#fff;background:rgba(255,255,255,.12);border:0;border-radius:999px;padding:6px 12px;text-decoration:none;font-weight:700;font-size:12.5px}
+.tabs{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:calc(58px + env(safe-area-inset-top));z-index:29}
+.tabs .in{max-width:1180px;margin:0 auto;display:flex;gap:2px;overflow-x:auto;padding:0 10px;scrollbar-width:none}
+.tabs button{border:0;background:none;padding:13px 14px 11px;font-weight:700;color:var(--dim);white-space:nowrap;border-bottom:3px solid transparent}
+.tabs button.on{color:var(--text);border-bottom-color:var(--coral)}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.card h3{margin:0 0 4px;font-size:15.5px}
+.hint{font-size:12.5px;color:var(--dim);margin:2px 0 10px}
+.field{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;background:#F8F9FB;outline:none;min-height:42px}
+.field:focus{border-color:var(--coral);background:#fff}
+.btn{border:0;border-radius:10px;padding:9px 14px;font-weight:700;min-height:40px;white-space:nowrap}
+.btn:disabled{opacity:.5}
+.p{background:var(--coral);color:#fff}.g{background:#fff;border:1.5px solid var(--line)}.n{background:var(--navy);color:#fff}
+.d{background:#fff;border:1.5px solid #F3C4C4;color:#B91C1C}
+.sm{min-height:32px;padding:5px 10px;font-size:12.5px;border-radius:8px}
+.grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:end}
+.lb{font-size:12px;color:var(--dim);font-weight:700;display:block}
+.lb .field{margin-top:3px;color:var(--text);font-weight:400}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{font-size:13px;font-weight:700;min-height:18px;margin-top:8px;color:var(--teal)}.msg.e{color:#DC2626}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:12px;color:var(--dim);text-align:left;padding:8px;border-bottom:1.5px solid var(--line);white-space:nowrap;background:#FAFBFC}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.nw{white-space:nowrap}
+.chip{display:inline-block;font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 9px;background:var(--coral-l);color:var(--coral-d);white-space:nowrap}
+.chip.i{background:#E6EAF3;color:var(--navy)}
+.chip.ok{background:var(--teal-l);color:var(--teal)}.chip.no{background:#EEF0F3;color:#7B8494}
+.code{font-family:'Barlow Condensed';font-weight:700;font-size:15px;background:var(--navy);color:#fff;border-radius:6px;padding:1px 8px;letter-spacing:.5px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font-size:24px;font-family:'Barlow Condensed';font-weight:800}
+.stat span{font-size:12px;color:var(--dim);font-weight:700}
+/* 기능 설정 표 */
+.fg{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.fcard{border:1px solid var(--line);border-radius:14px;padding:14px;background:#FBFCFD}
+.fcard .bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.fcard .bh b{font-size:18px}
+.frow{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.frow .nm{font-weight:800;display:flex;gap:8px;align-items:center}
+.frow .nm i{width:18px;text-align:center}
+.frow .dt{grid-column:1/-1;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--dim)}
+.frow .dt input{max-width:160px;min-height:34px;padding:5px 8px;font-size:13px}
+.sw{position:relative;width:52px;height:30px;flex:none}
+.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;background:#CBD2DC;border-radius:999px;transition:.2s;cursor:pointer}
+.sw span::before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw input:checked+span{background:var(--teal)}
+.sw input:checked+span::before{transform:translateX(22px)}
+.bars .br{display:grid;grid-template-columns:110px 1fr 44px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.bars .bt{background:#EEF1F6;border-radius:6px;height:14px;overflow:hidden}
+.bars .bt i{display:block;height:100%;background:var(--coral);border-radius:6px}
+.mc{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--navy-2);border-radius:14px;padding:24px 10px 10px;position:relative}
+.mc::before{content:"네트";position:absolute;top:5px;left:0;right:0;text-align:center;font-size:11px;color:#A9B4CC;letter-spacing:.3em}
+.mc div{background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:10px 4px;text-align:center;font-weight:700;font-size:13px}
+.mc div b{display:block;font-size:22px;font-family:'Barlow Condensed';color:var(--coral)}
+.pchip{display:inline-block;background:#EBF0FF;color:var(--navy-3);border-radius:12px;padding:2px 10px;margin:2px;font-size:12.5px;cursor:pointer}
+.batchchk{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+.batchchk label{display:flex;gap:6px;align-items:center;font-weight:700}
+#login{max-width:400px;margin:60px auto;padding:0 16px}
+.bad td{color:#DC2626}
+@media (max-width:640px){
+  .wrap{padding:12px}
+  header .t{font-size:16px;white-space:nowrap}
+  header .t .long,#who{display:none}
+  table.cards thead{display:none}
+  table.cards,table.cards tbody,table.cards tr,table.cards td{display:block;width:100%}
+  table.cards tr{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:8px 10px;background:#fff}
+  table.cards td{border:0;padding:3px 0}
+  table.cards td[data-l]::before{content:attr(data-l);color:var(--dim);font-size:11.5px;font-weight:700;margin-right:8px}
+}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <div class="t disp"><i class="fa-solid fa-user-shield"></i><span class="long">슬기로운 배구생활&nbsp;</span>관리자</div>
+  <div class="r"><span id="who"></span><a href="index.html"><i class="fa-solid fa-house"></i> 앱</a><button id="logout" class="hidden">로그아웃</button></div>
+</div></header>
+
+<!-- 로그인 -->
+<div id="login" class="hidden">
+  <div class="card" style="padding:22px">
+    <h3 style="font-size:19px">강사 로그인</h3>
+    <p class="hint">강사 계정(이름 + 개인확인코드)으로 로그인하세요.</p>
+    <form id="iForm">
+      <input id="iName" class="field" placeholder="이름" style="margin-bottom:8px">
+      <input id="iCode" class="field" type="password" placeholder="개인확인코드" style="margin-bottom:10px">
+      <button class="btn p" style="width:100%">로그인</button>
+    </form>
+    <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">처음 설정할 때: 관리자 비밀번호로 로그인</summary>
+      <form id="aForm" style="margin-top:8px">
+        <input id="aPw" class="field" type="password" placeholder="관리자 비밀번호 (AI 분석 관리자와 동일)" style="margin-bottom:8px">
+        <button class="btn n" style="width:100%">관리자 비밀번호로 로그인</button>
+      </form>
+    </details>
+    <div id="loginMsg" class="msg e"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <nav class="tabs"><div class="in" id="tabs">
+    <button data-t="people" class="on">👥 연수생·강사</button>
+    <button data-t="features">🔓 기수별 기능</button>
+    <button data-t="survey">📋 희망 조사 결과</button>
+    <button data-t="videos">🎬 영상 자료실</button>
+    <button data-t="logs">👀 열람 기록</button>
+    <button data-t="notice">📢 공지</button>
+  </div></nav>
+
+  <!-- 연수생·강사 -->
+  <section class="wrap" data-s="people">
+    <div class="stats" id="pStats"></div>
+    <div class="card">
+      <h3 id="pFormTitle">한 명 추가</h3>
+      <p class="hint">기수에 <b>강사</b>를 넣으면 강사 계정이 되어 이 관리자 화면을 쓸 수 있어요. 이름 + 개인확인코드로 로그인합니다.</p>
+      <div class="grid">
+        <label class="lb">이름<input id="pName" class="field" maxlength="30"></label>
+        <label class="lb">개인확인코드<div class="row" style="flex-wrap:nowrap;margin-top:3px"><input id="pCode" class="field" maxlength="30" style="margin:0"><button class="btn g sm" id="pRand" title="4자리 자동 생성">🎲</button></div></label>
+        <label class="lb">기수<input id="pBatch" class="field" list="batchOpts" maxlength="20" placeholder="1기 / 2기 / 강사"></label>
+        <label class="lb">계정 사용<select id="pActive" class="field"><option value="1">사용</option><option value="0">중지</option></select></label>
+        <label class="lb">AI 분석 개인 설정<select id="pOv" class="field"><option value="">기수 설정 따름</option><option value="1">항상 허용</option><option value="0">항상 차단</option></select></label>
+      </div>
+      <datalist id="batchOpts"><option value="1기"><option value="2기"><option value="강사"></datalist>
+      <div class="row" style="margin-top:10px"><button class="btn p" id="pSave">저장</button><button class="btn g" id="pClear">새로 입력</button></div>
+      <div id="pMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h3>명단 한 번에 등록</h3>
+      <p class="hint">엑셀 양식을 내려받아 작성해 올리거나, 엑셀에서 <b>이름 · 코드 · 기수</b> 열을 복사해 아래 칸에 붙여넣으세요. 같은 이름이 이미 있으면 덮어쓰기/건너뛰기를 고를 수 있어요.</p>
+      <div class="row">
+        <button class="btn g" id="tplBtn"><i class="fa-solid fa-download"></i> 엑셀 양식</button>
+        <label class="btn n" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><i class="fa-solid fa-upload"></i> 엑셀 업로드<input id="xlFile" type="file" accept=".xlsx,.xls,.csv" hidden></label>
+      </div>
+      <textarea id="paste" class="field" rows="4" style="margin-top:10px" placeholder="홍길동	1234	1기&#10;김철수	5678	2기"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn g" id="pasteBtn">붙여넣은 내용 미리보기</button></div>
+      <div id="pv" class="hidden" style="margin-top:12px">
+        <div id="pvSum" style="font-weight:800;margin-bottom:6px"></div>
+        <div class="row" style="margin-bottom:8px">
+          <label><input type="radio" name="dup" value="overwrite" checked> 같은 이름은 덮어쓰기</label>
+          <label><input type="radio" name="dup" value="skip"> 같은 이름은 건너뛰기</label>
+        </div>
+        <div class="scroll" style="max-height:300px;overflow:auto"><table><thead><tr><th>줄</th><th>이름</th><th>코드</th><th>기수</th><th>결과</th></tr></thead><tbody id="pvT"></tbody></table></div>
+        <div class="row" style="margin-top:10px"><button class="btn p" id="bulkGo">등록</button><button class="btn g" id="bulkX">취소</button></div>
+      </div>
+      <div id="bMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h3 style="margin:0">명단</h3>
+        <div class="row">
+          <input id="pQ" class="field" placeholder="🔍 이름 검색" style="width:170px">
+          <select id="pF" class="field" style="width:auto"><option value="">전체</option></select>
+          <button class="btn g sm" id="pXls"><i class="fa-solid fa-file-excel"></i> 명단 저장</button>
+        </div>
+      </div>
+      <div class="scroll"><table class="cards"><thead><tr><th>이름</th><th>기수</th><th>코드</th><th>계정</th><th>AI 개인 설정</th><th>희망 조사</th><th></th></tr></thead><tbody id="pT"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- 기수별 기능 -->
+  <section class="wrap hidden" data-s="features">
+    <div class="card" style="background:var(--amber-l);border-color:#F7DFAE">
+      <b>기수마다 기능을 켜고 끌 수 있어요.</b>
+      <div class="hint" style="margin:4px 0 0;color:#7A4E00">스위치를 누르면 바로 저장되고, 연수생 화면에도 바로 반영돼요. 종료일을 넣으면 그날까지만 열려요(당일 포함). 강사 계정은 항상 모든 기능을 쓸 수 있어요.</div>
+    </div>
+    <div class="fg" id="fGrid"></div>
+    <div class="card" style="margin-top:14px">
+      <h3>AI 동작 분석 전체 스위치 (비상 정지)</h3>
+      <p class="hint">이게 꺼지면 기수 설정과 상관없이 AI 동작 분석이 모두 막혀요. 평소에는 켜 두세요.</p>
+      <div class="grid">
+        <label class="lb" style="display:flex;gap:10px;align-items:center;font-size:14px;color:var(--text)"><span class="sw"><input type="checkbox" id="mEnabled"><span></span></span> 전체 스위치 켜짐</label>
+        <label class="lb">연수 시작일 (성장 기록의 '몇째 날' 기준)<input id="mStart" type="date" class="field"></label>
+        <label class="lb">전체 종료일 (선택)<input id="mUntil" type="date" class="field"></label>
+      </div>
+      <label class="lb" style="margin-top:8px">막혔을 때 안내 문구<input id="mMsg" class="field" maxlength="300" placeholder="예: 연수가 끝나 더 이상 이용할 수 없어요."></label>
+      <button class="btn p" id="mSave" style="margin-top:10px">저장</button>
+      <div id="mMsgOut" class="msg"></div>
+    </div>
+  </section>
+
+  <!-- 희망 조사 결과 -->
+  <section class="wrap hidden" data-s="survey">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <div class="row"><select id="sF" class="field" style="width:auto"></select><button class="btn g sm" id="sReload"><i class="fa-solid fa-rotate"></i> 새로고침</button></div>
+      <button class="btn n" id="sXls"><i class="fa-solid fa-file-excel"></i> 엑셀로 저장</button>
+    </div>
+    <div class="stats" id="sStats"></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
+      <div class="card"><h3>① 연습 희망 파트</h3><div class="bars" id="sParts"></div></div>
+      <div class="card"><h3>② 시스템훈련 희망 포지션 (중복 선택)</h3><p class="hint" id="sAny"></p><div class="mc" id="sCourt"></div></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">응답 목록</h3>
+        <select id="sPart" class="field" style="width:auto"><option value="">모든 파트</option></select></div>
+      <div class="scroll" style="margin-top:10px"><table class="cards"><thead><tr><th>이름</th><th>기수</th><th>파트</th><th>희망 포지션</th><th>하고 싶은 말</th><th>제출</th></tr></thead><tbody id="sT"></tbody></table></div>
+    </div>
+    <div class="card"><h3>아직 안 낸 사람 <span id="sNoCnt"></span></h3><div id="sNo" style="line-height:2"></div></div>
+  </section>
+
+  <!-- 영상 자료실 -->
+  <section class="wrap hidden" data-s="videos">
+    <div class="card">
+      <h3 id="vFormTitle">영상 추가</h3>
+      <p class="hint">유튜브에 <b>일부공개</b>로 올린 뒤 링크를 붙여넣으세요. 연수생 화면에서는 링크 복사·공유 버튼이 가려지고, 보는 사람 이름이 워터마크로 표시돼요.</p>
+      <label class="lb">유튜브 링크 또는 영상 ID<input id="vUrl" class="field" placeholder="https://youtu.be/..."></label>
+      <div class="grid" style="margin-top:8px">
+        <label class="lb">제목<input id="vTitle" class="field"></label>
+        <label class="lb">날짜<input id="vDate" type="date" class="field"></label>
+        <label class="lb">분류<input id="vCat" class="field" list="vCats" placeholder="수업 / 경기 / 시범"><datalist id="vCats"><option>수업<option>경기<option>시범<option>피드백</datalist></label>
+      </div>
+      <div class="lb" style="margin-top:10px">볼 수 있는 기수 <span style="font-weight:400">(아무것도 안 고르면 모든 기수)</span></div>
+      <div class="batchchk" id="vBatches"></div>
+      <label class="lb" style="margin-top:10px">출연 연수생 (쉼표로 구분)<input id="vPlayers" class="field" placeholder="홍길동, 김철수"></label>
+      <div id="vChips" style="margin-top:6px;max-height:110px;overflow:auto"></div>
+      <p class="hint">이름을 누르면 추가돼요. 명단 이름과 같아야 연수생의 '내가 나온 영상'에 보여요.</p>
+      <div class="row"><button class="btn p" id="vSave">저장</button><button class="btn g" id="vClear">새로 입력</button></div>
+      <div id="vMsg" class="msg"></div>
+    </div>
+    <div class="card scroll"><table class="cards"><thead><tr><th>날짜</th><th>분류</th><th>제목</th><th>기수</th><th>출연</th><th></th></tr></thead><tbody id="vT"></tbody></table></div>
+  </section>
+
+  <!-- 열람 기록 -->
+  <section class="wrap hidden" data-s="logs">
+    <div class="card">
+      <div class="row"><select id="lName" class="field" style="width:auto"><option value="">전체</option></select><button class="btn g sm" id="lReload"><i class="fa-solid fa-rotate"></i> 새로고침</button></div>
+      <p class="hint" id="lSum" style="margin-top:8px"></p>
+    </div>
+    <div class="card scroll"><table class="cards"><thead><tr><th>시간</th><th>이름</th><th>영상</th></tr></thead><tbody id="lT"></tbody></table></div>
+  </section>
+
+  <!-- 공지 -->
+  <section class="wrap hidden" data-s="notice">
+    <div class="card">
+      <h3>홈 화면 공지</h3>
+      <p class="hint">연수생 홈 화면 맨 위에 보여요. 비우면 숨겨져요. (300자)</p>
+      <textarea id="nText" class="field" rows="4" maxlength="300"></textarea>
+      <button class="btn p" id="nSave" style="margin-top:10px">저장</button>
+      <div id="nMsg" class="msg"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const say = (id, t, err) => { $(id).textContent = t; $(id).className = 'msg' + (err ? ' e' : ''); };
+const ko = (a, b) => String(a).localeCompare(String(b), 'ko', { numeric: true });
+const INST = '강사';
+let token = null, D = { trainees: [], batches: [], features: [] }, S = null, V = [], L = [];
+
+// 강사 계정으로 앱에 로그인돼 있으면 그대로 사용, 아니면 이 화면에서 로그인
+function pickToken() {
+  const a = sessionStorage.getItem('sv_admin_token');
+  if (a) return a;
+  try { const u = JSON.parse(localStorage.getItem('sv_user') || 'null'); if (u && u.role === 'instructor') return localStorage.getItem('sv_token'); } catch {}
+  return null;
+}
+const api = (a, b) => svApi(a, b, { token, onAuthFail: out });
+function out() { sessionStorage.removeItem('sv_admin_token'); token = null; $('app').classList.add('hidden'); $('logout').classList.add('hidden'); $('login').classList.remove('hidden'); $('who').textContent = ''; }
+
+$('iForm').onsubmit = async e => {
+  e.preventDefault(); say('loginMsg', '확인 중...');
+  const d = await svApi('login', { name: $('iName').value, code: $('iCode').value });
+  if (!d.ok) return say('loginMsg', d.message, true);
+  if (d.user.role !== 'instructor') return say('loginMsg', '강사 계정만 들어올 수 있어요.', true);
+  localStorage.setItem('sv_token', d.token); localStorage.setItem('sv_user', JSON.stringify(d.user));
+  localStorage.setItem('vball_session', JSON.stringify({ id: d.user.id, name: d.user.name, batch: d.user.batch }));
+  token = d.token; start();
+};
+$('aForm').onsubmit = async e => {
+  e.preventDefault(); say('loginMsg', '확인 중...');
+  const d = await svApi('admin_login', { password: $('aPw').value });
+  if (!d.ok) return say('loginMsg', d.message, true);
+  sessionStorage.setItem('sv_admin_token', d.token); token = d.token; $('aPw').value = ''; start();
+};
+$('logout').onclick = () => { if (sessionStorage.getItem('sv_admin_token')) out(); else { ['sv_token', 'sv_user', 'vball_session', 'sv_features'].forEach(k => localStorage.removeItem(k)); out(); } };
+
+async function start() {
+  const me = await api('me');
+  if (!me.ok || me.user.role === 'trainee') { out(); if (me.ok) say('loginMsg', '강사 계정만 들어올 수 있어요.', true); return; }
+  say('loginMsg', '');
+  $('who').textContent = me.user.role === 'admin' ? '관리자 비밀번호' : me.user.name + ' 강사님';
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('logout').classList.remove('hidden');
+  await load();
+  showTab(sessionStorage.getItem('sv_admin_tab') || 'people');
+}
+async function load() {
+  const d = await api('admin_data');
+  if (!d.ok) return alert(d.message || '불러오지 못했어요.');
+  D = d; $('nText').value = d.notice || '';
+  renderPeople(); renderFeatures(); renderVBatches(); renderChips();
+}
+
+/* ---------------- 탭 ---------------- */
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+function showTab(t) {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('section[data-s]').forEach(s => s.classList.toggle('hidden', s.dataset.s !== t));
+  sessionStorage.setItem('sv_admin_tab', t);
+  if (t === 'survey') loadSurvey();
+  if (t === 'videos') loadVideos();
+  if (t === 'logs') loadLogs();
+  window.scrollTo(0, 0);
+}
+
+/* ---------------- 연수생·강사 ---------------- */
+let editId = null, surveyIds = new Set();
+const batchesAll = () => [...D.batches, INST];
+function renderPeople() {
+  const ts = D.trainees;
+  const cnt = b => ts.filter(t => (t.batch || '1기') === b).length;
+  $('pStats').innerHTML = [...D.batches.map(b => [b, cnt(b) + '명']), ['강사', cnt(INST) + '명'], ['전체', ts.length + '명']]
+    .map(([k, v]) => `<div class="stat"><span>${esc(k)}</span><b>${v}</b></div>`).join('');
+  const f = $('pF'), cur = f.value;
+  f.innerHTML = '<option value="">전체</option>' + batchesAll().map(b => `<option>${esc(b)}</option>`).join('');
+  f.value = batchesAll().includes(cur) ? cur : '';
+  const q = $('pQ').value.trim().toLowerCase();
+  const list = ts.filter(t => (!f.value || (t.batch || '1기') === f.value) && (!q || t.name.toLowerCase().includes(q)))
+    .sort((a, b) => ((a.batch === INST) - (b.batch === INST)) || ko(a.batch, b.batch) || ko(a.name, b.name));
+  const tb = $('pT'); tb.innerHTML = '';
+  if (!list.length) tb.innerHTML = '<tr><td colspan="7" class="hint">아직 등록된 사람이 없어요.</td></tr>';
+  list.forEach(t => {
+    const tr = document.createElement('tr');
+    const ov = t.enabled_override === true ? '항상 허용' : t.enabled_override === false ? '항상 차단' : '기수 설정 따름';
+    const isI = t.batch === INST;
+    tr.innerHTML = `<td data-l="이름"><b>${esc(t.name)}</b></td>
+      <td data-l="기수"><span class="chip ${isI ? 'i' : ''}">${esc(t.batch || '1기')}</span></td>
+      <td data-l="코드"><span class="code">${esc(t.code)}</span></td>
+      <td data-l="계정">${t.active ? '<span class="chip ok">사용</span>' : '<span class="chip no">중지</span>'}</td>
+      <td data-l="AI" class="nw">${isI ? '-' : ov}</td>
+      <td data-l="희망 조사">${isI ? '-' : (surveyIds.has(t.id) ? '<span class="chip ok">제출</span>' : (S ? '<span class="chip no">미제출</span>' : '…'))}</td>
+      <td class="nw"><button class="btn g sm" data-a="e">수정</button> <button class="btn g sm" data-a="t">${t.active ? '중지' : '사용'}</button> <button class="btn d sm" data-a="d">삭제</button></td>`;
+    tr.querySelector('[data-a=e]').onclick = () => editP(t);
+    tr.querySelector('[data-a=t]').onclick = async () => { const d = await api('admin_trainee', { ...t, active: !t.active }); if (!d.ok) alert(d.message); load(); };
+    tr.querySelector('[data-a=d]').onclick = async () => {
+      if (!confirm(`${t.name} 님을 삭제할까요?\n희망 조사 응답도 함께 지워지고, 더 이상 로그인할 수 없어요.`)) return;
+      const d = await api('admin_trainee_delete', { id: t.id }); if (!d.ok) alert(d.message); load();
+    };
+    tb.append(tr);
+  });
+  if (!S) api('admin_survey').then(d => { if (d.ok) { S = d; surveyIds = new Set(d.rows.filter(r => r.survey).map(r => r.id)); renderPeople(); } });
+}
+function editP(t) {
+  editId = t.id; $('pFormTitle').textContent = `수정: ${t.name}`;
+  $('pName').value = t.name; $('pCode').value = t.code; $('pBatch').value = t.batch || '1기';
+  $('pActive').value = t.active ? '1' : '0'; $('pOv').value = t.enabled_override === true ? '1' : t.enabled_override === false ? '0' : '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function clearP() { editId = null; $('pFormTitle').textContent = '한 명 추가'; ['pName', 'pCode', 'pBatch'].forEach(i => $(i).value = ''); $('pActive').value = '1'; $('pOv').value = ''; }
+$('pClear').onclick = () => { clearP(); say('pMsg', ''); };
+$('pRand').onclick = () => $('pCode').value = String(Math.floor(1000 + Math.random() * 9000));
+$('pSave').onclick = async () => {
+  const ov = $('pOv').value;
+  const d = await api('admin_trainee', { id: editId, name: $('pName').value, code: $('pCode').value, batch: $('pBatch').value || '1기', active: $('pActive').value === '1', enabled_override: ov === '' ? null : ov === '1' });
+  say('pMsg', d.ok ? '저장했어요.' : d.message, !d.ok);
+  if (d.ok) { clearP(); load(); }
+};
+$('pQ').oninput = renderPeople; $('pF').onchange = renderPeople;
+$('pXls').onclick = () => {
+  if (typeof XLSX === 'undefined') return alert('엑셀 도구를 불러오지 못했어요. 새로고침해 주세요.');
+  const rows = [['이름', '개인확인코드', '기수', '계정']].concat(D.trainees.map(t => [t.name, t.code, t.batch, t.active ? '사용' : '중지']));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '명단'); XLSX.writeFile(wb, '슬기로운배구생활_명단.xlsx');
+};
+
+/* 일괄 등록 */
+let pending = [];
+$('tplBtn').onclick = () => {
+  if (typeof XLSX === 'undefined') return alert('엑셀 도구를 불러오지 못했어요. 새로고침해 주세요.');
+  const ws = XLSX.utils.aoa_to_sheet([['이름', '개인확인코드', '기수'], ['(예시)홍길동', '1234', '1기'], ['(예시)김철수', '0567', '2기'], ['(예시)이강사', '9999', '강사']]);
+  for (let r = 1; r <= 300; r++) [1].forEach(c => { const a = XLSX.utils.encode_cell({ r, c }); const cell = ws[a] || { t: 's', v: '' }; cell.t = 's'; cell.z = '@'; ws[a] = cell; });
+  ws['!ref'] = 'A1:C301'; ws['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 10 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '명단'); XLSX.writeFile(wb, '명단등록양식.xlsx');
+};
+$('xlFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (typeof XLSX === 'undefined') return alert('엑셀 도구를 불러오지 못했어요.');
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+    const h = (rows[0] || []).map(x => String(x).replace(/\s/g, ''));
+    const ix = (...k) => h.findIndex(x => k.some(y => x.includes(y)));
+    let c = { n: ix('이름'), c: ix('코드', '비밀번호'), b: ix('기수', '그룹') };
+    let body = rows.slice(1);
+    if (c.n < 0 || c.c < 0) { c = { n: 0, c: 1, b: 2 }; body = rows; }
+    preview(body.map((r, i) => ({ line: i + 2, name: r[c.n], code: r[c.c], batch: c.b >= 0 ? r[c.b] : '' })));
+  } catch { say('bMsg', '파일을 읽지 못했어요.', true); }
+};
+$('pasteBtn').onclick = () => {
+  const rows = $('paste').value.split(/\r?\n/).map((l, i) => {
+    const p = l.includes('\t') ? l.split('\t') : l.includes(',') ? l.split(',') : l.trim().split(/\s+/);
+    return { line: i + 1, name: p[0], code: p[1], batch: p[2] };
+  });
+  preview(rows);
+};
+function preview(rows) {
+  const exist = new Set(D.trainees.map(t => t.name.trim().toLowerCase())), seen = new Set();
+  pending = [];
+  rows.forEach(r => {
+    const name = String(r.name ?? '').trim().replace(/^\(예시\).*/, ''), raw = r.code;
+    let code = String(raw ?? '').trim();
+    if (typeof raw === 'number' && code.length < 4) code = code.padStart(4, '0');
+    const batch = String(r.batch ?? '').trim() || '1기';
+    if (!name && !code) return;
+    let err = !name ? '이름 없음' : !code ? '코드 없음' : seen.has(name.toLowerCase()) ? '파일 안에서 중복' : '';
+    if (!err) seen.add(name.toLowerCase());
+    pending.push({ line: r.line, name, code, batch, err, exists: exist.has(name.toLowerCase()) });
+  });
+  if (!pending.length) return say('bMsg', '등록할 줄이 없어요.', true);
+  renderPv();
+}
+const dupMode = () => document.querySelector('input[name=dup]:checked').value;
+function renderPv() {
+  const skip = dupMode() === 'skip', ok = pending.filter(r => !r.err), old = ok.filter(r => r.exists).length;
+  $('pv').classList.remove('hidden'); say('bMsg', '');
+  $('pvSum').textContent = `총 ${pending.length}줄 · 새로 ${ok.length - old}명 · 이미 있음 ${old}명(${skip ? '건너뜀' : '덮어씀'}) · 오류 ${pending.length - ok.length}줄`;
+  $('pvT').innerHTML = pending.map(r => `<tr class="${r.err ? 'bad' : ''}"><td>${r.line}</td><td>${esc(r.name)}</td><td>${esc(r.code)}</td><td>${esc(r.batch)}</td><td>${r.err ? '❌ ' + r.err : r.exists ? (skip ? '⏭ 건너뜀' : '🔄 덮어쓰기') : '🆕 새로'}</td></tr>`).join('');
+  const n = ok.length - (skip ? old : 0); $('bulkGo').disabled = n <= 0; $('bulkGo').textContent = `${n}명 등록`;
+}
+document.querySelectorAll('input[name=dup]').forEach(x => x.onchange = () => pending.length && renderPv());
+$('bulkX').onclick = () => { pending = []; $('pv').classList.add('hidden'); };
+$('bulkGo').onclick = async () => {
+  $('bulkGo').disabled = true; say('bMsg', '등록 중...');
+  const d = await api('admin_trainee_bulk', { rows: pending.filter(r => !r.err), mode: dupMode() });
+  if (!d.ok) { say('bMsg', d.message, true); $('bulkGo').disabled = false; return; }
+  say('bMsg', `완료: 새로 ${d.created}명 · 덮어쓰기 ${d.updated}명 · 건너뜀 ${d.skipped}명${d.rejected ? ' · 제외 ' + d.rejected + '줄' : ''}`);
+  pending = []; $('pv').classList.add('hidden'); $('paste').value = ''; load();
+};
+
+/* ---------------- 기수별 기능 ---------------- */
+const FEAT = [
+  ['survey', 'fa-clipboard-list', '연습 희망 조사', 'var(--coral-d)'],
+  ['ai', 'fa-wand-magic-sparkles', 'AI 동작 분석', 'var(--info)'],
+  ['videos', 'fa-circle-play', '영상 자료실', 'var(--teal)'],
+];
+function renderFeatures() {
+  const g = $('fGrid'); g.innerHTML = '';
+  D.features.forEach(row => {
+    const n = D.trainees.filter(t => t.batch === row.batch).length;
+    const c = document.createElement('div'); c.className = 'fcard';
+    c.innerHTML = `<div class="bh"><b class="disp">${esc(row.batch)}</b><span class="hint" style="margin:0">${n}명</span></div>`;
+    FEAT.forEach(([k, ic, label, color]) => {
+      const f = row[k] || { enabled: false, ends: '' };
+      const r = document.createElement('div'); r.className = 'frow';
+      r.innerHTML = `<div class="nm"><i class="fa-solid ${ic}" style="color:${color}"></i>${label}</div>
+        <label class="sw"><input type="checkbox" ${f.enabled ? 'checked' : ''}><span></span></label>
+        <div class="dt">종료일 <input type="date" class="field" value="${f.ends || ''}"> <span class="st"></span></div>`;
+      const sw = r.querySelector('input[type=checkbox]'), dt = r.querySelector('input[type=date]'), st = r.querySelector('.st');
+      const save = async () => {
+        st.textContent = '저장 중...';
+        const d = await api('admin_feature', { batch: row.batch, feature: k, enabled: sw.checked, ends: dt.value });
+        st.textContent = d.ok ? (sw.checked ? '✅ 열림' : '⛔ 닫힘') : '⚠️ ' + d.message;
+        if (d.ok) { f.enabled = sw.checked; f.ends = dt.value; }
+        setTimeout(() => st.textContent = '', 2500);
+      };
+      sw.onchange = save; dt.onchange = save;
+      c.append(r);
+    });
+    g.append(c);
+  });
+  const m = D.ai_master || {};
+  $('mEnabled').checked = m.enabled !== false; $('mStart').value = m.training_start_date || ''; $('mUntil').value = m.active_until || ''; $('mMsg').value = m.message || '';
+}
+$('mSave').onclick = async () => {
+  const d = await api('admin_ai_master', { enabled: $('mEnabled').checked, training_start_date: $('mStart').value, active_until: $('mUntil').value, message: $('mMsg').value });
+  say('mMsgOut', d.ok ? '저장했어요.' : d.message, !d.ok);
+};
+
+/* ---------------- 희망 조사 결과 ---------------- */
+async function loadSurvey() {
+  const d = await api('admin_survey'); if (!d.ok) return alert(d.message);
+  S = d; surveyIds = new Set(d.rows.filter(r => r.survey).map(r => r.id));
+  const f = $('sF'), cur = f.value, bs = [...new Set(d.rows.map(r => r.batch || '1기'))].sort(ko);
+  f.innerHTML = '<option value="">전체 기수</option>' + bs.map(b => `<option>${esc(b)}</option>`).join(''); f.value = bs.includes(cur) ? cur : '';
+  const p = $('sPart'), pc = p.value; p.innerHTML = '<option value="">모든 파트</option>' + d.parts.map(x => `<option>${esc(x)}</option>`).join(''); p.value = pc;
+  renderSurvey();
+}
+function renderSurvey() {
+  const d = S, b = $('sF').value, part = $('sPart').value;
+  const rows = d.rows.filter(r => r.active && (!b || (r.batch || '1기') === b));
+  const done = rows.filter(r => r.survey);
+  $('sStats').innerHTML = [['대상', rows.length + '명'], ['제출', done.length + '명'], ['미제출', rows.length - done.length + '명'], ['제출률', rows.length ? Math.round(done.length / rows.length * 100) + '%' : '-']]
+    .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+  const pc = Object.fromEntries(d.parts.map(x => [x, 0])); done.forEach(r => pc[r.survey.part] = (pc[r.survey.part] || 0) + 1);
+  const mx = Math.max(1, ...Object.values(pc));
+  $('sParts').innerHTML = d.parts.map(x => `<div class="br"><b>${esc(x)}</b><div class="bt"><i style="width:${pc[x] / mx * 100}%"></i></div><span>${pc[x]}명</span></div>`).join('');
+  const pos = Object.fromEntries(d.positions.map(x => [x, 0])); let any = 0;
+  done.forEach(r => { (r.survey.positions || []).forEach(x => pos[x]++); if (!(r.survey.positions || []).length) any++; });
+  $('sCourt').innerHTML = d.positions.map(x => `<div><b>${pos[x]}</b>${esc(x)}</div>`).join('');
+  $('sAny').textContent = `'상관없음'(선택 안 함) ${any}명`;
+  const list = done.filter(r => !part || r.survey.part === part).sort((a, b2) => ko(a.batch, b2.batch) || ko(a.name, b2.name));
+  $('sT').innerHTML = list.length ? list.map(r => `<tr><td data-l="이름" class="nw"><b>${esc(r.name)}</b></td><td data-l="기수"><span class="chip">${esc(r.batch)}</span></td>
+    <td data-l="파트" class="nw">${esc(r.survey.part)}</td><td data-l="포지션">${esc((r.survey.positions || []).join(', ') || '상관없음')}</td>
+    <td data-l="하고 싶은 말" style="white-space:pre-wrap;min-width:220px">${esc(r.survey.memo || '')}</td>
+    <td data-l="제출" class="nw hint">${new Date(r.survey.updated_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="hint">아직 응답이 없어요.</td></tr>';
+  const no = rows.filter(r => !r.survey);
+  $('sNoCnt').textContent = `(${no.length}명)`;
+  $('sNo').innerHTML = no.map(r => `<span class="pchip" style="cursor:default">${esc(r.name)} · ${esc(r.batch)}</span>`).join('') || '<span class="hint">모두 제출했어요! 🎉</span>';
+}
+$('sF').onchange = renderSurvey; $('sPart').onchange = renderSurvey; $('sReload').onclick = loadSurvey;
+$('sXls').onclick = () => {
+  if (!S || typeof XLSX === 'undefined') return;
+  const rows = [['이름', '기수', '희망 파트', '희망 포지션', '하고 싶은 말', '제출 시각']].concat(
+    S.rows.filter(r => r.active).sort((a, b) => ko(a.batch, b.batch) || ko(a.name, b.name)).map(r => r.survey
+      ? [r.name, r.batch, r.survey.part, (r.survey.positions || []).join(', ') || '상관없음', r.survey.memo || '', new Date(r.survey.updated_at).toLocaleString('ko-KR')]
+      : [r.name, r.batch, '(미제출)', '', '', '']));
+  const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 10 }, { wch: 6 }, { wch: 12 }, { wch: 30 }, { wch: 60 }, { wch: 20 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '희망조사'); XLSX.writeFile(wb, '연습희망조사_결과.xlsx');
+};
+
+/* ---------------- 영상 자료실 ---------------- */
+let editV = null;
+const ytId = s => { s = s.trim(); if (/^[\w-]{6,20}$/.test(s) && !s.includes('.')) return s; const m = s.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{6,20})/); return m ? m[1] : ''; };
+function renderVBatches(sel = []) { $('vBatches').innerHTML = D.batches.map(b => `<label><input type="checkbox" value="${esc(b)}" ${sel.includes(b) ? 'checked' : ''}> ${esc(b)}</label>`).join(''); }
+function renderChips() {
+  $('vChips').innerHTML = '';
+  D.trainees.filter(t => t.batch !== INST).sort((a, b) => ko(a.batch, b.batch) || ko(a.name, b.name)).forEach(t => {
+    const s = document.createElement('span'); s.className = 'pchip'; s.textContent = t.name;
+    s.onclick = () => { const cur = $('vPlayers').value.split(',').map(x => x.trim()).filter(Boolean); if (!cur.includes(t.name)) cur.push(t.name); $('vPlayers').value = cur.join(', '); };
+    $('vChips').append(s);
+  });
+}
+async function loadVideos() {
+  const d = await api('admin_videos'); if (!d.ok) return; V = d.videos;
+  $('vT').innerHTML = V.length ? '' : '<tr><td colspan="6" class="hint">아직 영상이 없어요.</td></tr>';
+  V.forEach(v => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td data-l="날짜" class="nw">${esc(v.date)}</td><td data-l="분류">${esc(v.category)}</td><td data-l="제목"><b>${esc(v.title)}</b></td>
+      <td data-l="기수">${v.batches.length ? v.batches.map(b => `<span class="chip">${esc(b)}</span>`).join(' ') : '<span class="chip ok">전체</span>'}</td>
+      <td data-l="출연">${esc(v.players.join(', '))}</td>
+      <td class="nw"><button class="btn g sm" data-a="e">수정</button> <button class="btn d sm" data-a="d">삭제</button></td>`;
+    tr.querySelector('[data-a=e]').onclick = () => {
+      editV = v.id; $('vFormTitle').textContent = '영상 수정'; $('vUrl').value = v.video_id; $('vTitle').value = v.title; $('vDate').value = v.date;
+      $('vCat').value = v.category; $('vPlayers').value = v.players.join(', '); renderVBatches(v.batches); window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    tr.querySelector('[data-a=d]').onclick = async () => { if (confirm(`"${v.title}" 영상을 삭제할까요?`)) { await api('admin_video_delete', { id: v.id }); loadVideos(); } };
+    $('vT').append(tr);
+  });
+}
+function clearV() { editV = null; $('vFormTitle').textContent = '영상 추가'; ['vUrl', 'vTitle', 'vDate', 'vCat', 'vPlayers'].forEach(i => $(i).value = ''); renderVBatches(); }
+$('vClear').onclick = () => { clearV(); say('vMsg', ''); };
+$('vSave').onclick = async () => {
+  const video_id = ytId($('vUrl').value);
+  if (!video_id) return say('vMsg', '유튜브 링크를 확인해 주세요.', true);
+  const d = await api('admin_video', { id: editV, video_id, title: $('vTitle').value, date: $('vDate').value, category: $('vCat').value || '수업',
+    batches: [...document.querySelectorAll('#vBatches input:checked')].map(x => x.value), players: $('vPlayers').value.split(',') });
+  say('vMsg', d.ok ? '저장했어요.' : d.message, !d.ok);
+  if (d.ok) { clearV(); loadVideos(); }
+};
+
+/* ---------------- 열람 기록 ---------------- */
+async function loadLogs() {
+  const [d, v] = await Promise.all([api('admin_logs'), V.length ? null : api('admin_videos')]);
+  if (v && v.ok) V = v.videos;
+  if (!d.ok) return; L = d.logs;
+  const names = [...new Set(L.map(l => l.name))].sort(ko), sel = $('lName'), cur = sel.value;
+  sel.innerHTML = '<option value="">전체</option>' + names.map(n => `<option>${esc(n)}</option>`).join(''); sel.value = names.includes(cur) ? cur : '';
+  renderLogs();
+}
+function renderLogs() {
+  const f = $('lName').value, title = id => (V.find(v => v.video_id === id) || {}).title || id;
+  const rows = L.filter(l => !f || l.name === f);
+  $('lT').innerHTML = rows.length ? rows.map(l => `<tr><td data-l="시간" class="nw">${new Date(l.at).toLocaleString('ko-KR')}</td><td data-l="이름">${esc(l.name)}</td><td data-l="영상">${esc(title(l.video_id))}</td></tr>`).join('') : '<tr><td colspan="3" class="hint">기록이 없어요.</td></tr>';
+  const c = {}; L.forEach(l => c[l.name] = (c[l.name] || 0) + 1);
+  $('lSum').textContent = '최근 500건 · ' + (Object.entries(c).sort((a, b) => b[1] - a[1]).map(([n, k]) => `${n} ${k}회`).join(' · ') || '기록 없음');
+}
+$('lName').onchange = renderLogs; $('lReload').onclick = loadLogs;
+
+/* ---------------- 공지 ---------------- */
+$('nSave').onclick = async () => { const d = await api('admin_notice', { text: $('nText').value }); say('nMsg', d.ok ? '저장했어요.' : d.message, !d.ok); };
+
+token = pickToken();
+token ? start() : $('login').classList.remove('hidden');
+</script>
+</body>
+</html>

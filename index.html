@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#14213D">
+<title>슬기로운 배구생활</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="config.js"></script>
+<style>
+:root{
+  --navy:#14213D;--navy-2:#1F2F52;--navy-3:#2A3E68;
+  --coral:#FF6B4A;--coral-d:#E8542E;--coral-l:#FFE9E2;
+  --teal:#1FA98F;--teal-l:#E4F7F3;--amber:#F5A623;--amber-l:#FFF3DD;--info:#6D5BD0;--info-l:#EFEAFB;
+  --bg:#EEF1F6;--card:#fff;--line:#E2E7EF;--text:#182236;--dim:#6B7688;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);margin:0;font-size:15px;line-height:1.5}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.disp{font-family:'Barlow Condensed','Noto Sans KR',sans-serif}
+.hidden{display:none!important}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px calc(28px + env(safe-area-inset-bottom))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.btn{border:0;border-radius:14px;padding:13px 16px;font-weight:700;touch-action:manipulation;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--coral);color:#fff}
+.btn-ghost{background:#fff;border:1.5px solid var(--line)}
+.btn-block{width:100%}
+.field{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;background:#F8F9FB;outline:none}
+.field:focus{border-color:var(--coral);background:#fff}
+.err{color:#DC2626;font-size:13px;font-weight:700;min-height:20px;margin-top:8px}
+.muted{color:var(--dim);font-size:13px}
+
+/* 로그인 */
+#login{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px;background:
+  radial-gradient(1200px 500px at 50% -10%,rgba(255,107,74,.18),transparent 60%),linear-gradient(180deg,var(--navy),var(--navy-2) 55%,var(--bg) 55%)}
+#login .box{width:100%;max-width:380px}
+#login .brand{color:#fff;text-align:center;margin-bottom:26px}
+#login .brand i{font-size:44px;color:var(--coral)}
+#login .brand h1{margin:10px 0 2px;font-size:30px;font-weight:800;letter-spacing:-.01em}
+#login .brand p{margin:0;color:#A9B4CC;font-size:13px}
+#login .card{padding:24px;box-shadow:0 20px 50px rgba(20,33,61,.25)}
+#login .card h2{margin:0 0 4px;font-size:17px}
+#login .card .field{margin-top:10px}
+
+/* 헤더 */
+header{position:sticky;top:0;z-index:40;background:linear-gradient(135deg,var(--navy),var(--navy-2));padding-top:env(safe-area-inset-top)}
+header .in{max-width:560px;margin:0 auto;padding:0 16px;height:60px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header .ttl{color:#fff;font-weight:800;font-size:19px;display:flex;align-items:center;gap:8px;min-width:0}
+header .ttl i{color:var(--coral)}
+header .back{background:rgba(255,255,255,.12);color:#fff;border:0;width:36px;height:36px;border-radius:50%;flex:none}
+header .me{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:0;border-radius:999px;padding:5px 12px 5px 6px;color:#fff;font-size:13px;font-weight:700;flex:none}
+header .me .av{width:26px;height:26px;border-radius:50%;background:var(--coral);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+
+/* 홈 */
+.hello{background:linear-gradient(135deg,var(--navy-2),var(--navy-3));color:#fff;border-radius:20px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.hello::after{content:"🏐";position:absolute;right:-10px;bottom:-22px;font-size:110px;opacity:.12}
+.hello .b{display:inline-block;background:var(--coral);color:#fff;font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px}
+.hello h2{margin:8px 0 2px;font-size:22px}
+.hello p{margin:0;color:#C9D2E6;font-size:13px}
+.notice{background:var(--amber-l);border:1px solid #F7DFAE;color:#7A4E00;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:14px;display:flex;gap:10px;white-space:pre-wrap}
+.tiles{display:grid;gap:12px}
+.tile{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;transition:transform .12s,box-shadow .12s}
+.tile:active{transform:scale(.98)}
+.tile .ic{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.tile .tx{flex:1;min-width:0}
+.tile .tx b{display:block;font-size:16px}
+.tile .tx span{display:block;color:var(--dim);font-size:12.5px;margin-top:1px}
+.tile .st{font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.tile.off{background:#F6F7FA}
+.tile.off .ic{filter:grayscale(1);opacity:.5}
+.tile.off .tx b{color:#8A93A3}
+.st.done{background:var(--teal-l);color:var(--teal)}
+.st.todo{background:var(--coral-l);color:var(--coral-d)}
+.st.lock{background:#E9ECF2;color:#7B8494}
+@media (hover:hover){.tile:not(.off):hover{box-shadow:0 8px 22px rgba(20,33,61,.08)}}
+
+/* 희망 조사 */
+.sec-h{display:flex;align-items:center;gap:10px;margin:6px 2px 10px}
+.sec-h .n{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.sec-h h3{margin:0;font-size:17px}
+.q{font-weight:800;font-size:14.5px;margin:0 0 4px}
+.parts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.part{border:2px solid var(--line);background:#fff;border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:800}
+.part .em{font-size:28px}
+.part[aria-pressed=true]{border-color:var(--coral);background:var(--coral-l);color:var(--coral-d)}
+textarea.field{min-height:110px;resize:vertical;font-size:15px}
+.court{position:relative;background:var(--navy-2);border-radius:16px;padding:26px 10px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}
+.court::before{content:"네트";position:absolute;top:5px;left:0;right:0;text-align:center;font-size:11px;color:#A9B4CC;letter-spacing:.3em}
+.court::after{content:"";position:absolute;top:21px;left:10px;right:10px;border-top:2px dashed rgba(255,255,255,.5)}
+.cell{aspect-ratio:1.35;border:0;border-radius:11px;background:rgba(255,255,255,.1);color:#fff;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2;padding:4px;transition:background .12s,transform .12s}
+.cell[aria-pressed=true]{background:var(--coral);transform:scale(1.03)}
+.savebar{position:sticky;bottom:0;padding:12px 0 calc(8px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(238,241,246,0),var(--bg) 30%)}
+.saved{font-size:12.5px;color:var(--teal);font-weight:700;text-align:center;margin-top:6px;min-height:18px}
+
+/* 영상 자료실 (유출 억제 플레이어) */
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.filters .field{font-size:14.5px;padding:10px 12px}
+.filters .q{grid-column:1/-1}
+.mine{display:flex;align-items:center;gap:8px;font-size:14px;margin:6px 2px 12px}
+.mine input{width:20px;height:20px}
+#vlist{display:grid;grid-template-columns:1fr;gap:14px}
+.post{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+.post .meta{font-size:12px;color:var(--dim);font-weight:700}
+.tag{background:#EBF0FF;color:var(--navy-3);border-radius:6px;padding:1px 7px;margin-left:5px}
+.new{background:#EF4444;color:#fff;border-radius:6px;padding:1px 7px;margin-left:5px}
+.post .title{font-size:16px;font-weight:800;margin:4px 0 10px}
+.vw{position:relative;width:100%;padding-bottom:56.25%;height:0;background:#000;border-radius:10px;overflow:hidden}
+.vw iframe,.vw .thumb{position:absolute;inset:0;width:100%;height:100%;border:0}
+.thumb{object-fit:cover;cursor:pointer}
+.play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:54px;color:#fff;text-shadow:0 2px 8px #000;pointer-events:none}
+.ov{position:absolute;z-index:5;background:transparent;display:none}
+.vw.playing .ov{display:block}
+.ov.top{top:0;left:0;right:0;height:52px}
+.ov.br{bottom:0;right:0;width:120px;height:44px}
+.ov.bl{bottom:0;left:0;width:0;height:0}
+.vw:fullscreen .ov.top,.vw.fakefs .ov.top{height:64px}
+.vw:fullscreen .ov.br,.vw.fakefs .ov.br{width:240px;height:55px}
+.vw:fullscreen .ov.bl,.vw.fakefs .ov.bl{width:80px;height:55px}
+.vw:fullscreen,.vw.fakefs{padding-bottom:0!important;width:100vw!important;height:100vh!important;border-radius:0!important}
+.vw.fakefs{position:fixed;inset:0;z-index:9998;height:100dvh!important}
+.wm{position:absolute;z-index:6;color:rgba(255,255,255,.35);font-size:clamp(12px,2vw,22px);font-weight:800;text-shadow:0 0 3px rgba(0,0,0,.5);pointer-events:none;transition:all 1.5s;display:none;white-space:nowrap}
+.vw.playing .wm{display:block}
+.closefs{position:absolute;top:10px;right:10px;z-index:10;display:none;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:14px}
+.vw.fakefs .closefs{display:block}
+.vbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.vbtns button{padding:11px;border-radius:10px;border:0;font-weight:700;font-size:13.5px}
+.vbtns .fs{background:var(--navy);color:#fff}.vbtns .cc{background:#E9ECF2;color:var(--text)}
+.empty{text-align:center;color:var(--dim);padding:30px 10px}
+@media (min-width:760px){
+  .wrap.wide{max-width:1180px}
+  .wide #vlist{grid-template-columns:repeat(2,1fr)}
+  .wide .filters{grid-template-columns:2fr 1fr 1fr}.wide .filters .q{grid-column:auto}
+}
+@media (min-width:1100px){.wide #vlist{grid-template-columns:repeat(3,1fr)}}
+
+/* 시트, 토스트 */
+.sheet-bg{position:fixed;inset:0;background:rgba(20,33,61,.6);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:520px;padding:22px 20px calc(22px + env(safe-area-inset-bottom))}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,12px);background:var(--navy);color:#fff;font-size:13.5px;font-weight:700;padding:10px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:all .25s;z-index:200;max-width:86vw}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.spin{width:30px;height:30px;border:4px solid var(--coral-l);border-top-color:var(--coral);border-radius:50%;animation:sp .8s linear infinite;margin:30px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ===== 로그인 ===== -->
+<div id="login" class="hidden">
+  <div class="box">
+    <div class="brand">
+      <i class="fa-solid fa-volleyball"></i>
+      <h1 class="disp">슬기로운 배구생활</h1>
+      <p id="subTitle">겨울방학 배구 연수</p>
+    </div>
+    <form class="card" id="loginForm" autocomplete="on">
+      <h2>연수생 로그인</h2>
+      <p class="muted" style="margin:0">강사님께 안내받은 이름과 개인확인코드를 입력해 주세요.</p>
+      <input id="lName" class="field" placeholder="이름" maxlength="30" autocomplete="username">
+      <input id="lCode" class="field" type="password" inputmode="numeric" placeholder="개인확인코드" maxlength="30" autocomplete="current-password">
+      <button class="btn btn-primary btn-block" id="lBtn" style="margin-top:14px">입장하기</button>
+      <div class="err" id="lErr" role="alert"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== 앱 ===== -->
+<div id="app" class="hidden">
+  <header>
+    <div class="in">
+      <button class="back hidden" id="backBtn" aria-label="홈으로"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="ttl disp" id="ttl"><i class="fa-solid fa-volleyball"></i><span>슬기로운 배구생활</span></div>
+      <button class="me" id="meBtn"><span class="av" id="av">?</span><span id="meName"></span></button>
+    </div>
+  </header>
+
+  <!-- 홈 -->
+  <main class="wrap" data-view="home">
+    <div class="hello">
+      <span class="b" id="hBatch"></span>
+      <h2 id="hName"></h2>
+      <p>오늘도 즐겁게, 슬기롭게 배구해요!</p>
+    </div>
+    <div class="notice hidden" id="notice"><i class="fa-solid fa-bullhorn" style="margin-top:3px"></i><span id="noticeText"></span></div>
+    <div class="tiles" id="tiles"></div>
+  </main>
+
+  <!-- 희망 조사 -->
+  <main class="wrap hidden" data-view="survey">
+    <p class="muted" style="margin:2px 2px 14px">연수 전에 주로 연습하고 싶은 내용을 알려 주세요. 강사님들이 연수를 준비할 때 참고해요. 제출한 뒤에도 언제든 고칠 수 있어요.</p>
+
+    <div class="sec-h"><span class="n">1</span><h3>선택연습 희망 내용</h3></div>
+    <div class="card" style="margin-bottom:12px">
+      <p class="q">1) 가장 연습하고 싶은 파트를 골라 주세요.</p>
+      <div class="parts" id="parts"></div>
+    </div>
+    <div class="card" style="margin-bottom:22px">
+      <p class="q">2) 집중적으로 연습하고 싶은 파트나, 평소 피드백받고 싶었던 점을 자유롭게 적어 주세요.</p>
+      <textarea id="memo" class="field" maxlength="1000" style="margin-top:8px" placeholder="예) 언더 리시브할 때 공이 자꾸 옆으로 튀어요. 플랫폼 각도를 봐 주셨으면 좋겠어요."></textarea>
+      <div class="muted" style="text-align:right;margin-top:4px"><span id="memoLen">0</span>/1000</div>
+    </div>
+
+    <div class="sec-h"><span class="n">2</span><h3>시스템훈련 희망 포지션</h3></div>
+    <div class="card">
+      <p class="q">원하는 칸을 모두 눌러 주세요.</p>
+      <p class="muted" style="margin:0">하나도 고르지 않으면 어느 포지션이든 괜찮다는 뜻이에요.</p>
+      <div class="court" id="court"></div>
+      <p class="muted" style="margin:10px 0 0" id="posSum"></p>
+    </div>
+
+    <div class="savebar">
+      <button class="btn btn-primary btn-block" id="surveySave"><i class="fa-solid fa-paper-plane" style="margin-right:6px"></i>제출하기</button>
+      <div class="saved" id="savedAt"></div>
+    </div>
+  </main>
+
+  <!-- 영상 자료실 -->
+  <main class="wrap wide hidden" data-view="videos">
+    <div class="notice" style="background:#EEF2FB;border-color:#D6DEF0;color:var(--navy-2)"><i class="fa-solid fa-shield-halved" style="margin-top:3px"></i><span>연수생 전용 영상이에요. 외부 공유·녹화는 삼가 주세요. 영상에 이름이 표시되고 열람 기록이 남아요.</span></div>
+    <div class="filters">
+      <input id="vq" class="field q" placeholder="🔍 제목 검색">
+      <select id="vcat" class="field"><option value="">전체 분류</option></select>
+      <select id="vmonth" class="field"><option value="">전체 기간</option></select>
+    </div>
+    <label class="mine"><input type="checkbox" id="vmine"> 내가 나온 영상만 보기</label>
+    <div id="vlist"></div>
+    <button id="vmore" class="btn btn-ghost btn-block hidden" style="margin-top:14px">더 보기</button>
+  </main>
+</div>
+
+<!-- 내 정보 시트 -->
+<div class="sheet-bg hidden" id="meSheet">
+  <div class="sheet">
+    <div class="disp" style="font-size:21px;font-weight:800" id="sName"></div>
+    <p class="muted" style="margin:2px 0 16px" id="sBatch"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-ghost" id="sClose">닫기</button>
+      <button class="btn" id="sLogout" style="background:#FEE2E2;color:#B91C1C">로그아웃</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 2400); }
+const api = (a, b) => svApi(a, b, { onAuthFail: logout });
+
+let user = null, features = {}, survey = null, surveyDone = false, shownView = null;
+try { user = JSON.parse(localStorage.getItem('sv_user') || 'null'); } catch {}
+
+const PART_ICON = { '리시브': '🤲', '수비': '🛡️', '공격': '💥', '세터(토스)': '🙌' };
+const VIEWS = { home: '슬기로운 배구생활', survey: '연습 희망 조사', videos: '영상 자료실' };
+
+/* ---------- 로그인 ---------- */
+$('subTitle').textContent = SV_CONFIG.SUBTITLE;
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('lName').value.trim(), code = $('lCode').value.trim();
+  if (!name || !code) { $('lErr').textContent = '이름과 개인확인코드를 입력해 주세요.'; return; }
+  $('lBtn').disabled = true; $('lErr').textContent = '';
+  const d = await svApi('login', { name, code });
+  $('lBtn').disabled = false;
+  if (!d.ok) { $('lErr').textContent = d.message || '로그인에 실패했어요.'; return; }
+  localStorage.setItem('sv_token', d.token);
+  setUser(d.user); setFeatures(d); showNotice(d.notice);
+  $('lCode').value = '';
+  enter();
+});
+function setUser(u) {
+  user = u;
+  localStorage.setItem('sv_user', JSON.stringify(u));
+  // AI 동작 분석 화면(ai.html)과 로그인 공유
+  localStorage.setItem('vball_session', JSON.stringify({ id: u.id, name: u.name, batch: u.batch }));
+}
+function setFeatures(d) {
+  features = d.features || {};
+  if ('survey_done' in d) surveyDone = !!d.survey_done;
+  localStorage.setItem('sv_features', JSON.stringify(features));
+}
+function logout() {
+  ['sv_token', 'sv_user', 'vball_session', 'sv_features'].forEach(k => localStorage.removeItem(k));
+  user = null; $('meSheet').classList.add('hidden');
+  $('app').classList.add('hidden'); $('login').classList.remove('hidden');
+  history.replaceState(null, '', location.pathname);
+}
+
+async function enter() {
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  $('meName').textContent = user.name; $('av').textContent = user.name.charAt(0);
+  $('hName').textContent = user.name + ' 님, 반가워요';
+  $('hBatch').textContent = user.role === 'instructor' ? '강사' : (user.batch || '연수생');
+  renderTiles();
+  route();
+  refresh();
+}
+// 서버에서 권한 다시 확인 (강사님이 기능을 열고 닫으면 바로 반영)
+async function refresh() {
+  const d = await api('me');
+  if (!d.ok) return;
+  setUser(d.user); setFeatures(d); showNotice(d.notice); renderTiles();
+  const v = curView();
+  if (v !== 'home' && !features[v]) { toast('지금은 열려 있지 않은 기능이에요.'); go('home'); }
+  else if (v !== shownView) route();
+}
+function showNotice(t) { $('notice').classList.toggle('hidden', !t); $('noticeText').textContent = t || ''; }
+
+/* ---------- 홈 타일 ---------- */
+function renderTiles() {
+  const isI = user.role === 'instructor';
+  const done = !!survey || surveyDone;
+  const T = [
+    { k: 'survey', ic: 'fa-clipboard-list', bg: 'var(--coral-l)', fg: 'var(--coral-d)', t: '연습 희망 조사', s: '연습하고 싶은 파트와 희망 포지션', st: done ? ['done', '제출 완료'] : ['todo', '미제출'] },
+    { k: 'ai', ic: 'fa-wand-magic-sparkles', bg: 'var(--info-l)', fg: 'var(--info)', t: 'AI 동작 분석', s: '촬영하면 AI 코치가 자세를 분석해요', href: 'ai.html' },
+    { k: 'videos', ic: 'fa-circle-play', bg: 'var(--teal-l)', fg: 'var(--teal)', t: '영상 자료실', s: '연수 영상을 안전하게 다시 보기' },
+  ];
+  const box = $('tiles'); box.innerHTML = '';
+  T.forEach(x => {
+    const on = !!features[x.k];
+    const st = !on ? ['lock', '🔒 닫힘'] : x.st;
+    const b = document.createElement('button');
+    b.className = 'tile' + (on ? '' : ' off');
+    b.innerHTML = `<span class="ic" style="background:${x.bg};color:${x.fg}"><i class="fa-solid ${x.ic}"></i></span>
+      <span class="tx"><b>${x.t}</b><span>${on ? x.s : '아직 열리지 않았어요. 강사님이 열어 주시면 쓸 수 있어요.'}</span></span>
+      ${st ? `<span class="st ${st[0]}">${st[1]}</span>` : '<i class="fa-solid fa-chevron-right" style="color:#B5BCC8"></i>'}`;
+    b.onclick = () => { if (!on) return toast('아직 열리지 않은 기능이에요.'); x.href ? (location.href = x.href) : go(x.k); };
+    box.append(b);
+  });
+  if (isI) {
+    const b = document.createElement('button');
+    b.className = 'tile';
+    b.innerHTML = `<span class="ic" style="background:#E6EAF3;color:var(--navy)"><i class="fa-solid fa-user-shield"></i></span>
+      <span class="tx"><b>강사 관리자</b><span>연수생 명단 · 기수별 기능 · 조사 결과 · 영상</span></span><i class="fa-solid fa-chevron-right" style="color:#B5BCC8"></i>`;
+    b.onclick = () => location.href = 'admin.html';
+    box.append(b);
+  }
+}
+
+/* ---------- 화면 전환 (#survey, #videos) ---------- */
+const curView = () => { const h = location.hash.slice(1); return VIEWS[h] ? h : 'home'; };
+function go(v) { location.hash = v === 'home' ? '' : v; if (v === 'home') route(); }
+window.addEventListener('hashchange', route);
+function route() {
+  if (!user) return;
+  let v = curView();
+  if (v !== 'home' && !features[v]) v = 'home';
+  shownView = v;
+  document.querySelectorAll('main[data-view]').forEach(m => m.classList.toggle('hidden', m.dataset.view !== v));
+  $('ttl').querySelector('span').textContent = VIEWS[v];
+  $('backBtn').classList.toggle('hidden', v === 'home');
+  $('ttl').querySelector('i').classList.toggle('hidden', v !== 'home');
+  if (v !== 'videos') stopAll();
+  if (v === 'survey') loadSurvey();
+  if (v === 'videos') loadVideos();
+  window.scrollTo(0, 0);
+}
+$('backBtn').onclick = () => go('home');
+$('meBtn').onclick = () => { $('sName').textContent = user.name; $('sBatch').textContent = user.role === 'instructor' ? '강사' : (user.batch || ''); $('meSheet').classList.remove('hidden'); };
+$('sClose').onclick = () => $('meSheet').classList.add('hidden');
+$('meSheet').onclick = e => { if (e.target.id === 'meSheet') $('meSheet').classList.add('hidden'); };
+$('sLogout').onclick = logout;
+document.addEventListener('visibilitychange', () => { if (!document.hidden && user) refresh(); });
+
+/* ---------- 희망 조사 ---------- */
+let sel = { part: '', positions: [] }, PARTS = [], POS = [];
+async function loadSurvey() {
+  $('parts').innerHTML = '<div class="spin" style="grid-column:1/-1"></div>';
+  const d = await api('survey_get');
+  if (!d.ok) { $('parts').innerHTML = `<p class="muted">${esc(d.message)}</p>`; return; }
+  PARTS = d.parts; POS = d.positions; survey = d.survey;
+  sel = { part: survey?.part || '', positions: [...(survey?.positions || [])] };
+  $('memo').value = survey?.memo || ''; $('memoLen').textContent = $('memo').value.length;
+  $('savedAt').textContent = survey ? '마지막 제출: ' + new Date(survey.updated_at).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  $('surveySave').innerHTML = `<i class="fa-solid fa-paper-plane" style="margin-right:6px"></i>${survey ? '수정해서 다시 제출' : '제출하기'}`;
+  drawParts(); drawCourt();
+}
+function drawParts() {
+  const box = $('parts'); box.innerHTML = '';
+  PARTS.forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'part'; b.setAttribute('aria-pressed', String(sel.part === p));
+    b.innerHTML = `<span class="em">${PART_ICON[p] || '🏐'}</span><span>${esc(p)}</span>`;
+    b.onclick = () => { sel.part = p; drawParts(); };
+    box.append(b);
+  });
+}
+function drawCourt() {
+  const box = $('court'); box.innerHTML = '';
+  POS.forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'cell'; b.textContent = p;
+    b.setAttribute('aria-pressed', String(sel.positions.includes(p)));
+    b.onclick = () => {
+      const i = sel.positions.indexOf(p);
+      i >= 0 ? sel.positions.splice(i, 1) : sel.positions.push(p);
+      b.setAttribute('aria-pressed', String(i < 0)); posSum();
+    };
+    box.append(b);
+  });
+  posSum();
+}
+function posSum() {
+  const ordered = POS.filter(p => sel.positions.includes(p));
+  $('posSum').innerHTML = '선택: <b>' + (ordered.length ? esc(ordered.join(', ')) : '상관없음') + '</b>';
+}
+$('memo').oninput = () => $('memoLen').textContent = $('memo').value.length;
+$('surveySave').onclick = async () => {
+  if (!sel.part) { toast('1번에서 연습하고 싶은 파트를 골라 주세요.'); $('parts').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  $('surveySave').disabled = true;
+  const d = await api('survey_save', { part: sel.part, memo: $('memo').value, positions: POS.filter(p => sel.positions.includes(p)) });
+  $('surveySave').disabled = false;
+  if (!d.ok) return toast(d.message || '저장하지 못했어요.');
+  survey = d.survey; surveyDone = true;
+  toast('제출했어요. 감사합니다!');
+  renderTiles(); go('home');
+};
+
+/* ---------- 영상 자료실 ---------- */
+const PAGE = 12;
+let videos = [], shown = PAGE, moveTimers = [];
+async function loadVideos() {
+  $('vlist').innerHTML = '<div class="spin" style="grid-column:1/-1"></div>';
+  const d = await api('videos');
+  if (!d.ok) { $('vlist').innerHTML = `<p class="empty">${esc(d.message)}</p>`; return; }
+  videos = d.videos;
+  const cats = [...new Set(videos.map(v => v.category))], months = [...new Set(videos.map(v => v.date.slice(0, 7)))];
+  $('vcat').innerHTML = '<option value="">전체 분류</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+  $('vmonth').innerHTML = '<option value="">전체 기간</option>' + months.map(m => `<option>${m}</option>`).join('');
+  renderVideos(true);
+}
+function filtered() {
+  const q = $('vq').value.trim().toLowerCase(), c = $('vcat').value, m = $('vmonth').value, mine = $('vmine').checked;
+  return videos.filter(v => (!q || v.title.toLowerCase().includes(q)) && (!c || v.category === c) && (!m || v.date.startsWith(m)) && (!mine || (v.players || []).includes(user.name)));
+}
+const isNew = d => (Date.now() - new Date(d).getTime()) < 7 * 864e5;
+function stopAll() { moveTimers.forEach(clearInterval); moveTimers = []; document.querySelectorAll('.vw.playing').forEach(vw => { vw.classList.remove('playing', 'fakefs'); vw.innerHTML = ''; }); document.body.style.overflow = ''; }
+function renderVideos(reset) {
+  if (reset) shown = PAGE;
+  stopAll();
+  const list = filtered(), box = $('vlist'); box.innerHTML = '';
+  if (!list.length) box.innerHTML = `<p class="empty" style="grid-column:1/-1">${videos.length ? '조건에 맞는 영상이 없어요.' : '아직 올라온 영상이 없어요.'}</p>`;
+  list.slice(0, shown).forEach(v => {
+    const d = document.createElement('div'); d.className = 'post';
+    d.innerHTML = `<div class="meta">📅 ${esc(v.date)}<span class="tag">${esc(v.category)}</span>${isNew(v.date) ? '<span class="new">NEW</span>' : ''}</div><div class="title">${esc(v.title)}</div>`;
+    const vw = document.createElement('div'); vw.className = 'vw';
+    vw.innerHTML = `<img class="thumb" loading="lazy" alt="" src="https://i.ytimg.com/vi/${encodeURIComponent(v.video_id)}/hqdefault.jpg"><div class="play">▶</div>`;
+    vw.querySelector('.thumb').onclick = () => play(vw, v);
+    const bt = document.createElement('div'); bt.className = 'vbtns';
+    bt.innerHTML = '<button class="fs">🖥️ 전체화면</button><button class="cc">💬 자막 켜기/끄기</button>';
+    bt.querySelector('.fs').onclick = () => fullscreen(vw, v);
+    bt.querySelector('.cc').onclick = e => toggleCaps(vw, e.target);
+    d.append(vw, bt); box.append(d);
+  });
+  $('vmore').classList.toggle('hidden', list.length <= shown);
+}
+function play(vw, v) {
+  vw.innerHTML = `
+    <iframe title="영상" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.video_id)}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=0&cc_load_policy=0&hl=ko&enablejsapi=1&origin=${encodeURIComponent(location.origin)}"
+      sandbox="allow-scripts allow-same-origin allow-presentation"
+      allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <div class="ov top"></div><div class="ov br"></div><div class="ov bl"></div>
+    <div class="wm"></div><button class="closefs">✕ 닫기</button>`;
+  vw.classList.add('playing'); vw.dataset.cc = 'off';
+  vw.querySelector('iframe').addEventListener('load', () => capsOff(vw));
+  vw.querySelector('.closefs').onclick = () => exitFs(vw);
+  const wm = vw.querySelector('.wm'); wm.textContent = user.name;
+  const mv = () => { wm.style.left = (5 + Math.random() * 60) + '%'; wm.style.top = (12 + Math.random() * 60) + '%'; };
+  mv(); moveTimers.push(setInterval(mv, 7000));
+  api('video_log', { video_id: v.video_id });
+}
+function ytCmd(vw, func, args) { const f = vw.querySelector('iframe'); if (f && f.contentWindow) f.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: args || [] }), '*'); }
+function capsOff(vw) {
+  const f = vw.querySelector('iframe'); if (f && f.contentWindow) f.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+  [800, 2000, 4000].forEach(t => setTimeout(() => ytCmd(vw, 'unloadModule', ['captions']), t));
+}
+function toggleCaps(vw, btn) {
+  if (!vw.classList.contains('playing')) return toast('영상을 먼저 재생해 주세요.');
+  const on = vw.dataset.cc === 'on';
+  ytCmd(vw, on ? 'unloadModule' : 'loadModule', ['captions']);
+  vw.dataset.cc = on ? 'off' : 'on'; btn.textContent = on ? '💬 자막 켜기' : '💬 자막 끄기';
+}
+function fullscreen(vw, v) {
+  if (!vw.classList.contains('playing')) play(vw, v);
+  const rf = vw.requestFullscreen || vw.webkitRequestFullscreen;
+  if (rf) Promise.resolve(rf.call(vw)).then(() => { try { screen.orientation.lock('landscape'); } catch {} }).catch(() => fake(vw));
+  else fake(vw);
+}
+function fake(vw) { vw.classList.add('fakefs'); document.body.style.overflow = 'hidden'; }
+function exitFs(vw) { vw.classList.remove('fakefs'); document.body.style.overflow = ''; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.vw.fakefs').forEach(exitFs); });
+['vq', 'vcat', 'vmonth', 'vmine'].forEach(id => $(id).addEventListener(id === 'vq' ? 'input' : 'change', () => renderVideos(true)));
+$('vmore').onclick = () => { shown += PAGE; renderVideos(false); };
+
+/* ---------- 시작 ---------- */
+if (localStorage.getItem('sv_token') && user) {
+  try { features = JSON.parse(localStorage.getItem('sv_features') || '{}'); } catch {}
+  enter();
+} else $('login').classList.remove('hidden');
+</script>
+</body>
+</html>
