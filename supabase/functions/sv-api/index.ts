@@ -29,6 +29,14 @@ const today = () => new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); 
 const within = (ends?: string | null) => !ends || today() <= ends;
 const okDate = (x: unknown) => x === "" || x == null || /^\d{4}-\d{2}-\d{2}$/.test(String(x));
 const str = (x: unknown, n = 200) => String(x ?? "").trim().slice(0, n);
+// 기수는 여러 개 가능: "1기,2기" (두 기수 모두 참여). 강사는 "강사" 하나만.
+const batchesOf = (b?: string | null) => String(b || "1기").split(",").map((x) => x.trim()).filter(Boolean);
+const overlaps = (mine: string[], targets?: string[] | null) => !targets?.length || targets.some((x) => mine.includes(x));
+function normBatch(x: unknown) {
+  const parts = [...new Set(String(x ?? "").split(/[,/·+&\s]+/).map((v) => v.trim()).filter(Boolean).map((v) => /^\d+$/.test(v) ? v + "기" : v))];
+  if (parts.includes(INSTRUCTOR)) return INSTRUCTOR;
+  return parts.sort((a, b) => a.localeCompare(b, "ko", { numeric: true })).join(",").slice(0, 40) || "1기";
+}
 
 /* ---------------- 토큰 (HMAC-SHA256) ---------------- */
 const enc = new TextEncoder();
@@ -75,18 +83,19 @@ const pub = (t: Trainee) => ({ id: t.id, name: t.name, batch: t.batch || "1기",
 
 async function featureMap(t: Trainee | null, role: string) {
   if (role !== "trainee") return { survey: true, ai: role === "instructor", videos: true, diary: true, review: true };
-  const batch = t!.batch || "1기";
-  const [{ data: sf }, { data: master }, { data: bc }] = await Promise.all([
-    db.from("sv_features").select("*").eq("batch", batch),
+  const mine = batchesOf(t!.batch);
+  const [{ data: sf }, { data: master }, { data: bcs }] = await Promise.all([
+    db.from("sv_features").select("*").in("batch", mine),
     db.from("vball_config").select("*").eq("id", 1).maybeSingle(),
-    db.from("vball_batch_config").select("*").eq("batch", batch).maybeSingle(),
+    db.from("vball_batch_config").select("*").in("batch", mine),
   ]);
-  const f = (k: string) => { const r = (sf || []).find((x: any) => x.feature === k); return !!r && r.enabled && within(r.ends); };
+  // 여러 기수에 속하면, 그중 한 기수라도 열려 있으면 사용 가능
+  const f = (k: string) => (sf || []).some((r: any) => r.feature === k && r.enabled && within(r.ends));
   let ai = !!(master ? master.enabled && within(master.active_until) : true);
   if (ai) {
     if (t!.enabled_override === true) ai = true;
     else if (t!.enabled_override === false) ai = false;
-    else ai = bc ? !!bc.enabled && within(bc.active_until) : true;
+    else ai = mine.some((b) => { const c = (bcs || []).find((x: any) => x.batch === b); return c ? !!c.enabled && within(c.active_until) : true; });
   }
   return { survey: f("survey"), ai, videos: f("videos"), diary: f("diary"), review: f("review") };
 }
@@ -163,7 +172,7 @@ async function surveySave(me: Trainee, b: any) {
 
 async function videosList(batch: string | null) {
   const { data } = await db.from("sv_videos").select("*").order("date", { ascending: false }).limit(300);
-  const list = (data || []).filter((v: any) => !batch || !v.batches?.length || v.batches.includes(batch));
+  const list = (data || []).filter((v: any) => !batch || overlaps(batchesOf(batch), v.batches));
   return json({ ok: true, videos: list.map((v: any) => ({ video_id: v.video_id, title: v.title, date: v.date, category: v.category, players: v.players || [] })) });
 }
 
@@ -171,7 +180,7 @@ async function videosList(batch: string | null) {
 async function batchList() {
   const { data } = await db.from("vball_trainees").select("batch");
   const s = new Set(["1기", "2기"]);
-  (data || []).forEach((r: any) => r.batch && r.batch !== INSTRUCTOR && s.add(r.batch));
+  (data || []).forEach((r: any) => r.batch && r.batch !== INSTRUCTOR && batchesOf(r.batch).forEach((b) => s.add(b)));
   return [...s].sort((a, b) => a.localeCompare(b, "ko", { numeric: true }));
 }
 async function adminData() {
@@ -211,7 +220,7 @@ async function aiMasterSave(b: any) {
 }
 
 function cleanTrainee(r: any) {
-  const name = str(r.name, 30), code = str(r.code, 30), batch = str(r.batch, 20) || "1기";
+  const name = str(r.name, 30), code = str(r.code, 30), batch = normBatch(r.batch);
   if (!name || !code) return { err: "이름 또는 코드 없음" };
   const ov = r.enabled_override === true ? true : r.enabled_override === false ? false : null;
   return { row: { name, code, batch, active: r.active !== false, enabled_override: ov } };
@@ -276,7 +285,7 @@ async function videoSave(b: any) {
 }
 
 /* ---------------- 공지사항 ---------------- */
-const visibleTo = (batch: string | null) => (n: any) => !batch || !n.batches?.length || n.batches.includes(batch);
+const visibleTo = (batch: string | null) => (n: any) => !batch || overlaps(batchesOf(batch), n.batches);
 async function noticesList(me: Trainee | null, role: string) {
   const { data } = await db.from("sv_notices").select("*").order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(200);
   const list = (data || []).filter(visibleTo(role === "trainee" ? me!.batch : null));
@@ -294,7 +303,7 @@ async function adminNotices() {
     db.from("vball_trainees").select("id,name,batch,active").eq("active", true).neq("batch", INSTRUCTOR),
   ]);
   const out = (ns || []).map((n: any) => {
-    const target = (tr || []).filter((t: any) => visibleTo(null)(n) && (!n.batches?.length || n.batches.includes(t.batch)));
+    const target = (tr || []).filter((t: any) => visibleTo(t.batch)(n));
     const readIds = new Set((rd || []).filter((r: any) => r.notice_id === n.id).map((r: any) => r.trainee_id));
     return { ...n, target: target.length, read: target.filter((t: any) => readIds.has(t.id)).length, unread: target.filter((t: any) => !readIds.has(t.id)).map((t: any) => t.name) };
   });

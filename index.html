@@ -391,6 +391,7 @@ textarea.field{min-height:110px;resize:vertical;font-size:15px}
 
 <script>
 const $ = id => document.getElementById(id);
+const btxt = b => String(b || '').split(',').filter(Boolean).join('·');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 2400); }
 const api = (a, b) => svApi(a, b, { onAuthFail: logout });
@@ -442,7 +443,7 @@ async function enter() {
   $('login').classList.add('hidden'); $('app').classList.remove('hidden');
   $('meName').textContent = user.name; $('av').textContent = user.name.charAt(0);
   $('hName').textContent = user.name + ' 님, 반가워요';
-  $('hBatch').textContent = user.role === 'instructor' ? '강사' : (user.batch || '연수생');
+  $('hBatch').textContent = user.role === 'instructor' ? '강사' : (btxt(user.batch) || '연수생');
   renderTiles();
   route();
   refresh();
@@ -517,7 +518,7 @@ function route() {
   window.scrollTo(0, 0);
 }
 $('backBtn').onclick = () => go('home');
-$('meBtn').onclick = () => { $('sName').textContent = user.name; $('sBatch').textContent = user.role === 'instructor' ? '강사' : (user.batch || ''); $('meSheet').classList.remove('hidden'); };
+$('meBtn').onclick = () => { $('sName').textContent = user.name; $('sBatch').textContent = user.role === 'instructor' ? '강사' : btxt(user.batch); $('meSheet').classList.remove('hidden'); };
 $('sClose').onclick = () => $('meSheet').classList.add('hidden');
 $('meSheet').onclick = e => { if (e.target.id === 'meSheet') $('meSheet').classList.add('hidden'); };
 $('sLogout').onclick = logout;
@@ -866,7 +867,7 @@ let rRating = 0;
 function drawStars() { $('stars').innerHTML = ''; for (let i = 1; i <= 5; i++) { const b = document.createElement('button'); b.type = 'button'; b.textContent = '★'; b.className = i <= rRating ? 'on' : ''; b.setAttribute('aria-label', i + '점'); b.onclick = () => { rRating = i; drawStars(); }; $('stars').append(b); } }
 async function loadReview() {
   const n = user.name;
-  $('rnFull').textContent = `(${n})`; $('rnInit').textContent = `(${n.charAt(0)}OO 선생님)`; $('rnAnon').textContent = `(${user.batch} 연수생)`;
+  $('rnFull').textContent = `(${n})`; $('rnInit').textContent = `(${n.charAt(0)}OO 선생님)`; $('rnAnon').textContent = `(${btxt(user.batch)} 연수생)`;
   const d = await api('review_get');
   if (!d.ok) return toast(d.message);
   const r = d.review;

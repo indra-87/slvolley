@@ -142,22 +142,22 @@ td.nw{white-space:nowrap}
     <div class="stats" id="pStats"></div>
     <div class="card">
       <h3 id="pFormTitle">한 명 추가</h3>
-      <p class="hint">기수에 <b>강사</b>를 넣으면 강사 계정이 되어 이 관리자 화면을 쓸 수 있어요. 이름 + 개인확인코드로 로그인합니다.</p>
+      <p class="hint"><b>1기와 2기를 모두 신청한 분</b>은 기수에 <b>1기,2기</b>라고 넣으세요. 한 계정으로 두 기수의 기능·영상·공지를 모두 봐요. 기수에 <b>강사</b>를 넣으면 강사 계정이 되어 이 관리자 화면을 쓸 수 있어요. 이름 + 개인확인코드로 로그인합니다.</p>
       <div class="grid">
         <label class="lb">이름<input id="pName" class="field" maxlength="30"></label>
         <label class="lb">개인확인코드<div class="row" style="flex-wrap:nowrap;margin-top:3px"><input id="pCode" class="field" maxlength="30" style="margin:0"><button class="btn g sm" id="pRand" title="4자리 자동 생성">🎲</button></div></label>
-        <label class="lb">기수<input id="pBatch" class="field" list="batchOpts" maxlength="20" placeholder="1기 / 2기 / 강사"></label>
+        <label class="lb">기수<input id="pBatch" class="field" list="batchOpts" maxlength="40" placeholder="1기 / 2기 / 1기,2기 / 강사"></label>
         <label class="lb">계정 사용<select id="pActive" class="field"><option value="1">사용</option><option value="0">중지</option></select></label>
         <label class="lb">AI 분석 개인 설정<select id="pOv" class="field"><option value="">기수 설정 따름</option><option value="1">항상 허용</option><option value="0">항상 차단</option></select></label>
       </div>
-      <datalist id="batchOpts"><option value="1기"><option value="2기"><option value="강사"></datalist>
+      <datalist id="batchOpts"><option value="1기"><option value="2기"><option value="1기,2기"><option value="강사"></datalist>
       <div class="row" style="margin-top:10px"><button class="btn p" id="pSave">저장</button><button class="btn g" id="pClear">새로 입력</button></div>
       <div id="pMsg" class="msg"></div>
     </div>
 
     <div class="card">
       <h3>명단 한 번에 등록</h3>
-      <p class="hint">엑셀 양식을 내려받아 작성해 올리거나, 엑셀에서 <b>이름 · 코드 · 기수</b> 열을 복사해 아래 칸에 붙여넣으세요. 같은 이름이 이미 있으면 덮어쓰기/건너뛰기를 고를 수 있어요.</p>
+      <p class="hint">엑셀 양식을 내려받아 작성해 올리거나, 엑셀에서 <b>이름 · 코드 · 기수</b> 열을 복사해 아래 칸에 붙여넣으세요. 두 기수 모두 참여하는 분은 기수에 <b>1기/2기</b>처럼 쓰면 돼요. 같은 이름이 이미 있으면 덮어쓰기/건너뛰기를 고를 수 있어요.</p>
       <div class="row">
         <button class="btn g" id="tplBtn"><i class="fa-solid fa-download"></i> 엑셀 양식</button>
         <label class="btn n" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><i class="fa-solid fa-upload"></i> 엑셀 업로드<input id="xlFile" type="file" accept=".xlsx,.xls,.csv" hidden></label>
@@ -326,6 +326,15 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const say = (id, t, err) => { $(id).textContent = t; $(id).className = 'msg' + (err ? ' e' : ''); };
 const ko = (a, b) => String(a).localeCompare(String(b), 'ko', { numeric: true });
 const INST = '강사';
+// 기수는 여러 개 가능 ("1기,2기")
+const bl = x => String((x && x.batch !== undefined ? x.batch : x) || '1기').split(',').map(v => v.trim()).filter(Boolean);
+const inB = (x, b) => !b || bl(x).includes(b);
+const bt = x => bl(x).join('·');
+// 서버와 같은 규칙: "1기/2기", "1·2기", "2기, 1기" → "1기,2기"
+function normBatch(x) {
+  const p = [...new Set(String(x ?? '').split(/[,/·+&\s]+/).map(v => v.trim()).filter(Boolean).map(v => /^\d+$/.test(v) ? v + '기' : v))];
+  return p.includes(INST) ? INST : (p.sort(ko).join(',') || '1기');
+}
 let token = null, D = { trainees: [], batches: [], features: [] }, S = null, V = [], L = [];
 
 // 강사 계정으로 앱에 로그인돼 있으면 그대로 사용, 아니면 이 화면에서 로그인
@@ -391,14 +400,14 @@ let editId = null, surveyIds = new Set();
 const batchesAll = () => [...D.batches, INST];
 function renderPeople() {
   const ts = D.trainees;
-  const cnt = b => ts.filter(t => (t.batch || '1기') === b).length;
+  const cnt = b => ts.filter(t => inB(t, b)).length;
   $('pStats').innerHTML = [...D.batches.map(b => [b, cnt(b) + '명']), ['강사', cnt(INST) + '명'], ['전체', ts.length + '명']]
     .map(([k, v]) => `<div class="stat"><span>${esc(k)}</span><b>${v}</b></div>`).join('');
   const f = $('pF'), cur = f.value;
   f.innerHTML = '<option value="">전체</option>' + batchesAll().map(b => `<option>${esc(b)}</option>`).join('');
   f.value = batchesAll().includes(cur) ? cur : '';
   const q = $('pQ').value.trim().toLowerCase();
-  const list = ts.filter(t => (!f.value || (t.batch || '1기') === f.value) && (!q || t.name.toLowerCase().includes(q)))
+  const list = ts.filter(t => inB(t, f.value) && (!q || t.name.toLowerCase().includes(q)))
     .sort((a, b) => ((a.batch === INST) - (b.batch === INST)) || ko(a.batch, b.batch) || ko(a.name, b.name));
   const tb = $('pT'); tb.innerHTML = '';
   if (!list.length) tb.innerHTML = '<tr><td colspan="7" class="hint">아직 등록된 사람이 없어요.</td></tr>';
@@ -407,7 +416,7 @@ function renderPeople() {
     const ov = t.enabled_override === true ? '항상 허용' : t.enabled_override === false ? '항상 차단' : '기수 설정 따름';
     const isI = t.batch === INST;
     tr.innerHTML = `<td data-l="이름"><b>${esc(t.name)}</b></td>
-      <td data-l="기수"><span class="chip ${isI ? 'i' : ''}">${esc(t.batch || '1기')}</span></td>
+      <td data-l="기수"><span class="chip ${isI ? 'i' : ''}">${esc(bt(t))}</span></td>
       <td data-l="코드"><span class="code">${esc(t.code)}</span></td>
       <td data-l="계정">${t.active ? '<span class="chip ok">사용</span>' : '<span class="chip no">중지</span>'}</td>
       <td data-l="AI" class="nw">${isI ? '-' : ov}</td>
@@ -434,7 +443,7 @@ $('pClear').onclick = () => { clearP(); say('pMsg', ''); };
 $('pRand').onclick = () => $('pCode').value = String(Math.floor(1000 + Math.random() * 9000));
 $('pSave').onclick = async () => {
   const ov = $('pOv').value;
-  const d = await api('admin_trainee', { id: editId, name: $('pName').value, code: $('pCode').value, batch: $('pBatch').value || '1기', active: $('pActive').value === '1', enabled_override: ov === '' ? null : ov === '1' });
+  const d = await api('admin_trainee', { id: editId, name: $('pName').value, code: $('pCode').value, batch: normBatch($('pBatch').value), active: $('pActive').value === '1', enabled_override: ov === '' ? null : ov === '1' });
   say('pMsg', d.ok ? '저장했어요.' : d.message, !d.ok);
   if (d.ok) { clearP(); load(); }
 };
@@ -449,7 +458,7 @@ $('pXls').onclick = () => {
 let pending = [];
 $('tplBtn').onclick = () => {
   if (typeof XLSX === 'undefined') return alert('엑셀 도구를 불러오지 못했어요. 새로고침해 주세요.');
-  const ws = XLSX.utils.aoa_to_sheet([['이름', '개인확인코드', '기수'], ['(예시)홍길동', '1234', '1기'], ['(예시)김철수', '0567', '2기'], ['(예시)이강사', '9999', '강사']]);
+  const ws = XLSX.utils.aoa_to_sheet([['이름', '개인확인코드', '기수'], ['(예시)홍길동', '1234', '1기'], ['(예시)김철수', '0567', '2기'], ['(예시)박두기', '3456', '1기,2기'], ['(예시)이강사', '9999', '강사']]);
   for (let r = 1; r <= 300; r++) [1].forEach(c => { const a = XLSX.utils.encode_cell({ r, c }); const cell = ws[a] || { t: 's', v: '' }; cell.t = 's'; cell.z = '@'; ws[a] = cell; });
   ws['!ref'] = 'A1:C301'; ws['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 10 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '명단'); XLSX.writeFile(wb, '명단등록양식.xlsx');
@@ -471,7 +480,7 @@ $('xlFile').onchange = async e => {
 $('pasteBtn').onclick = () => {
   const rows = $('paste').value.split(/\r?\n/).map((l, i) => {
     const p = l.includes('\t') ? l.split('\t') : l.includes(',') ? l.split(',') : l.trim().split(/\s+/);
-    return { line: i + 1, name: p[0], code: p[1], batch: p[2] };
+    return { line: i + 1, name: p[0], code: p[1], batch: p.slice(2).join(',') };
   });
   preview(rows);
 };
@@ -482,7 +491,7 @@ function preview(rows) {
     const name = String(r.name ?? '').trim().replace(/^\(예시\).*/, ''), raw = r.code;
     let code = String(raw ?? '').trim();
     if (typeof raw === 'number' && code.length < 4) code = code.padStart(4, '0');
-    const batch = String(r.batch ?? '').trim() || '1기';
+    const batch = normBatch(r.batch);
     if (!name && !code) return;
     let err = !name ? '이름 없음' : !code ? '코드 없음' : seen.has(name.toLowerCase()) ? '파일 안에서 중복' : '';
     if (!err) seen.add(name.toLowerCase());
@@ -520,7 +529,7 @@ const FEAT = [
 function renderFeatures() {
   const g = $('fGrid'); g.innerHTML = '';
   D.features.forEach(row => {
-    const n = D.trainees.filter(t => t.batch === row.batch).length;
+    const n = D.trainees.filter(t => inB(t, row.batch)).length;
     const c = document.createElement('div'); c.className = 'fcard';
     c.innerHTML = `<div class="bh"><b class="disp">${esc(row.batch)}</b><span class="hint" style="margin:0">${n}명</span></div>`;
     FEAT.forEach(([k, ic, label, color]) => {
@@ -554,14 +563,14 @@ $('mSave').onclick = async () => {
 async function loadSurvey() {
   const d = await api('admin_survey'); if (!d.ok) return alert(d.message);
   S = d; surveyIds = new Set(d.rows.filter(r => r.survey).map(r => r.id));
-  const f = $('sF'), cur = f.value, bs = [...new Set(d.rows.map(r => r.batch || '1기'))].sort(ko);
+  const f = $('sF'), cur = f.value, bs = [...new Set(d.rows.flatMap(r => bl(r)))].sort(ko);
   f.innerHTML = '<option value="">전체 기수</option>' + bs.map(b => `<option>${esc(b)}</option>`).join(''); f.value = bs.includes(cur) ? cur : '';
   const p = $('sPart'), pc = p.value; p.innerHTML = '<option value="">모든 파트</option>' + d.parts.map(x => `<option>${esc(x)}</option>`).join(''); p.value = pc;
   renderSurvey();
 }
 function renderSurvey() {
   const d = S, b = $('sF').value, part = $('sPart').value;
-  const rows = d.rows.filter(r => r.active && (!b || (r.batch || '1기') === b));
+  const rows = d.rows.filter(r => r.active && inB(r, b));
   const done = rows.filter(r => r.survey);
   $('sStats').innerHTML = [['대상', rows.length + '명'], ['제출', done.length + '명'], ['미제출', rows.length - done.length + '명'], ['제출률', rows.length ? Math.round(done.length / rows.length * 100) + '%' : '-']]
     .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
@@ -573,14 +582,14 @@ function renderSurvey() {
   $('sCourt').innerHTML = d.positions.map(x => `<div><b>${pos[x]}</b>${esc(x)}</div>`).join('');
   $('sAny').textContent = `'상관없음'(선택 안 함) ${any}명`;
   const list = done.filter(r => !part || r.survey.part === part).sort((a, b2) => ko(a.batch, b2.batch) || ko(a.name, b2.name));
-  $('sT').innerHTML = list.length ? list.map(r => `<tr><td data-l="이름" class="nw"><b>${esc(r.name)}</b></td><td data-l="기수"><span class="chip">${esc(r.batch)}</span></td>
+  $('sT').innerHTML = list.length ? list.map(r => `<tr><td data-l="이름" class="nw"><b>${esc(r.name)}</b></td><td data-l="기수"><span class="chip">${esc(bt(r))}</span></td>
     <td data-l="파트" class="nw">${esc(r.survey.part)}</td><td data-l="포지션">${esc((r.survey.positions || []).join(', ') || '상관없음')}</td>
     <td data-l="하고 싶은 말" style="white-space:pre-wrap;min-width:220px">${esc(r.survey.memo || '')}</td>
     <td data-l="제출" class="nw hint">${new Date(r.survey.updated_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td></tr>`).join('')
     : '<tr><td colspan="6" class="hint">아직 응답이 없어요.</td></tr>';
   const no = rows.filter(r => !r.survey);
   $('sNoCnt').textContent = `(${no.length}명)`;
-  $('sNo').innerHTML = no.map(r => `<span class="pchip" style="cursor:default">${esc(r.name)} · ${esc(r.batch)}</span>`).join('') || '<span class="hint">모두 제출했어요! 🎉</span>';
+  $('sNo').innerHTML = no.map(r => `<span class="pchip" style="cursor:default">${esc(r.name)} · ${esc(bt(r))}</span>`).join('') || '<span class="hint">모두 제출했어요! 🎉</span>';
 }
 $('sF').onchange = renderSurvey; $('sPart').onchange = renderSurvey; $('sReload').onclick = loadSurvey;
 $('sXls').onclick = () => {
@@ -694,20 +703,20 @@ $('nReload').onclick = loadNotices;
 let DE = [];
 async function loadDiaryA() {
   const d = await api('admin_diary'); if (!d.ok) return alert(d.message); DE = d.entries;
-  const bs = [...new Set(D.trainees.filter(t => t.batch !== INST).map(t => t.batch || '1기'))].sort(ko), cb = $('dB').value;
+  const bs = [...new Set(D.trainees.filter(t => t.batch !== INST).flatMap(t => bl(t)))].sort(ko), cb = $('dB').value;
   $('dB').innerHTML = '<option value="">전체 기수</option>' + bs.map(b => `<option>${esc(b)}</option>`).join(''); $('dB').value = bs.includes(cb) ? cb : '';
   fillDN(); renderDiaryA();
 }
 function fillDN() {
   const b = $('dB').value, cur = $('dN').value;
-  const ns = D.trainees.filter(t => t.batch !== INST && (!b || t.batch === b)).map(t => t.name).sort(ko);
+  const ns = D.trainees.filter(t => t.batch !== INST && inB(t, b)).map(t => t.name).sort(ko);
   $('dN').innerHTML = '<option value="">전체 연수생</option>' + ns.map(n => `<option>${esc(n)}</option>`).join(''); $('dN').value = ns.includes(cur) ? cur : '';
 }
 $('dB').onchange = () => { fillDN(); renderDiaryA(); }; $('dN').onchange = renderDiaryA; $('dReload').onclick = loadDiaryA;
 const avg = a => { const v = a.filter(x => x != null); return v.length ? (v.reduce((p, c) => p + c, 0) / v.length).toFixed(1) : '-'; };
 function renderDiaryA() {
   const b = $('dB').value, n = $('dN').value;
-  const list = DE.filter(e => (!b || e.batch === b) && (!n || e.name === n));
+  const list = DE.filter(e => inB(e, b) && (!n || e.name === n));
   const people = new Set(list.map(e => e.trainee_id)).size;
   $('dStats').innerHTML = [['일기 수', list.length + '편'], ['쓴 사람', people + '명'], ['평균 공격', avg(list.map(e => e.attack))], ['평균 수비', avg(list.map(e => e.defense))], ['평균 세트', avg(list.map(e => e.setting))]]
     .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
@@ -716,7 +725,7 @@ function renderDiaryA() {
   $('dAvg').innerHTML = Object.keys(byDate).sort().reverse().map(dt => { const a = byDate[dt]; return `<tr><td class="nw">${dt}</td><td>${a.length}명</td><td>${avg(a.map(e => e.attack))}</td><td>${avg(a.map(e => e.defense))}</td><td>${avg(a.map(e => e.setting))}</td></tr>`; }).join('') || '<tr><td colspan="5" class="hint">아직 기록이 없어요.</td></tr>';
   $('dT').innerHTML = list.map(e => {
     let f = null; try { f = e.ai_feedback ? JSON.parse(e.ai_feedback) : null; } catch {}
-    return `<tr><td data-l="날짜" class="nw">${e.date}</td><td data-l="이름" class="nw"><b>${esc(e.name)}</b> <span class="chip">${esc(e.batch)}</span></td>
+    return `<tr><td data-l="날짜" class="nw">${e.date}</td><td data-l="이름" class="nw"><b>${esc(e.name)}</b> <span class="chip">${esc(bt(e))}</span></td>
       <td data-l="점수" class="nw">${e.attack ?? '-'} · ${e.defense ?? '-'} · ${e.setting ?? '-'}</td>
       <td data-l="일기" style="white-space:pre-wrap;min-width:240px">${esc(e.content)}</td>
       <td data-l="AI" style="min-width:160px" class="hint">${f ? esc(f.tomorrow || f.cheer || '') : ''}</td></tr>`;
@@ -731,22 +740,22 @@ $('dXls').onclick = () => {
 
 /* ---------------- 연수 후기 ---------------- */
 let RV = [];
-const showName = r => r.name_mode === 'name' ? r.name + ' 선생님' : r.name_mode === 'anon' ? (r.batch || '') + ' 연수생' : r.name.charAt(0) + 'OO 선생님';
+const showName = r => r.name_mode === 'name' ? r.name + ' 선생님' : r.name_mode === 'anon' ? bt(r) + ' 연수생' : r.name.charAt(0) + 'OO 선생님';
 async function loadReviews() {
   const d = await api('admin_reviews'); if (!d.ok) return alert(d.message); RV = d.reviews;
-  const bs = [...new Set(RV.map(r => r.batch))].filter(Boolean).sort(ko), cur = $('rB').value;
+  const bs = [...new Set(RV.flatMap(r => r.batch ? bl(r) : []))].sort(ko), cur = $('rB').value;
   $('rB').innerHTML = '<option value="">전체 기수</option>' + bs.map(b => `<option>${esc(b)}</option>`).join(''); $('rB').value = bs.includes(cur) ? cur : '';
   renderReviews();
 }
-const rFiltered = () => RV.filter(r => (!$('rB').value || r.batch === $('rB').value) && (!$('rOnly').checked || r.consent) && (!$('rPicked').checked || r.picked));
+const rFiltered = () => RV.filter(r => inB(r, $('rB').value) && (!$('rOnly').checked || r.consent) && (!$('rPicked').checked || r.picked));
 function renderReviews() {
-  const list = rFiltered(), all = RV.filter(r => !$('rB').value || r.batch === $('rB').value);
+  const list = rFiltered(), all = RV.filter(r => inB(r, $('rB').value));
   $('rStats').innerHTML = [['후기', all.length + '편'], ['평균 만족도', all.length ? '★ ' + (all.reduce((a, r) => a + r.rating, 0) / all.length).toFixed(1) : '-'], ['홍보 동의', all.filter(r => r.consent).length + '편'], ['고른 후기', all.filter(r => r.picked).length + '편']]
     .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
   const box = $('rList'); box.innerHTML = list.length ? '' : '<div class="card hint">아직 후기가 없어요. [기수별 기능]에서 연수 후기를 열어 주세요.</div>';
   list.forEach(r => {
     const c = document.createElement('div'); c.className = 'card';
-    c.innerHTML = `<div class="row" style="justify-content:space-between"><div class="row"><b>${esc(r.name)}</b><span class="chip">${esc(r.batch)}</span><span style="color:#F5A623;letter-spacing:1px">${'★'.repeat(r.rating)}<span style="color:#D5DAE3">${'★'.repeat(5 - r.rating)}</span></span>
+    c.innerHTML = `<div class="row" style="justify-content:space-between"><div class="row"><b>${esc(r.name)}</b><span class="chip">${esc(bt(r))}</span><span style="color:#F5A623;letter-spacing:1px">${'★'.repeat(r.rating)}<span style="color:#D5DAE3">${'★'.repeat(5 - r.rating)}</span></span>
       ${r.consent ? `<span class="chip ok">홍보 동의 · ${esc(showName(r))}</span>` : '<span class="chip no">홍보 비동의</span>'}</div>
       <button class="btn ${r.picked ? 'p' : 'g'} sm">${r.picked ? '⭐ 고름' : '☆ 고르기'}</button></div>
       ${r.best ? `<p style="font-weight:800;margin:10px 0 0">“${esc(r.best)}”</p>` : ''}
@@ -760,7 +769,7 @@ function renderReviews() {
 $('rCopy').onclick = async () => {
   const list = rFiltered().filter(r => r.consent);
   if (!list.length) return alert('홍보에 동의한 후기가 없어요.');
-  const txt = list.map(r => `${r.best ? `“${r.best}”\n` : ''}${r.content}\n- ${showName(r)} (${r.batch} 연수생) ${'★'.repeat(r.rating)}`).join('\n\n');
+  const txt = list.map(r => `${r.best ? `“${r.best}”\n` : ''}${r.content}\n- ${showName(r)} (${bt(r)} 연수생) ${'★'.repeat(r.rating)}`).join('\n\n');
   try { await navigator.clipboard.writeText(txt); alert(`${list.length}편을 복사했어요. 원하는 곳에 붙여넣으세요.`); } catch { prompt('아래 내용을 복사하세요.', txt); }
 };
 $('rXls').onclick = () => {
