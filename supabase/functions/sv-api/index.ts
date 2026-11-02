@@ -21,7 +21,8 @@ const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "";
 
 const INSTRUCTOR = "강사";
 const USER_HOURS = 12, ADMIN_HOURS = 6, MAX_FAIL = 5, LOCK_MIN = 10;
-const FEATURES = ["survey", "ai", "videos"] as const;
+const FEATURES = ["survey", "ai", "videos", "diary", "review"] as const;
+const SV_FEATS = ["survey", "videos", "diary", "review"];
 const PARTS = ["리시브", "수비", "공격", "세터(토스)"];
 const POS = ["레프트", "세터", "라이트", "센터(속공)", "앞차", "백차", "레프트백", "센터백", "라이트백"];
 const today = () => new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); // KST
@@ -73,7 +74,7 @@ type Trainee = { id: number; name: string; code: string; batch: string; active: 
 const pub = (t: Trainee) => ({ id: t.id, name: t.name, batch: t.batch || "1기", role: t.batch === INSTRUCTOR ? "instructor" : "trainee" });
 
 async function featureMap(t: Trainee | null, role: string) {
-  if (role !== "trainee") return { survey: true, ai: role === "instructor", videos: true };
+  if (role !== "trainee") return { survey: true, ai: role === "instructor", videos: true, diary: true, review: true };
   const batch = t!.batch || "1기";
   const [{ data: sf }, { data: master }, { data: bc }] = await Promise.all([
     db.from("sv_features").select("*").eq("batch", batch),
@@ -87,7 +88,7 @@ async function featureMap(t: Trainee | null, role: string) {
     else if (t!.enabled_override === false) ai = false;
     else ai = bc ? !!bc.enabled && within(bc.active_until) : true;
   }
-  return { survey: f("survey"), ai, videos: f("videos") };
+  return { survey: f("survey"), ai, videos: f("videos"), diary: f("diary"), review: f("review") };
 }
 
 async function getTrainee(id: number) {
@@ -107,6 +108,12 @@ async function surveyDone(id: number | null) {
   if (!id) return false;
   const { count } = await db.from("sv_survey").select("trainee_id", { count: "exact", head: true }).eq("trainee_id", id);
   return (count || 0) > 0;
+}
+async function flags(id: number | null) {
+  if (!id) return { survey_done: false, diary_today: false, review_done: false };
+  const c = async (t: string, f: (q: any) => any) => { const { count } = await f(db.from(t).select("trainee_id", { count: "exact", head: true }).eq("trainee_id", id)); return (count || 0) > 0; };
+  const [a, b, r] = await Promise.all([c("sv_survey", (q) => q), c("sv_diary", (q) => q.eq("date", today())), c("sv_reviews", (q) => q)]);
+  return { survey_done: a, diary_today: b, review_done: r };
 }
 async function notice() {
   const { data } = await db.from("sv_config").select("value").eq("key", "notice").maybeSingle();
@@ -128,7 +135,7 @@ async function login(b: any) {
   await clearFail(lk);
   const u = pub(t);
   const token = await issue({ r: u.role === "instructor" ? "i" : "t", id: t.id, n: t.name }, USER_HOURS);
-  return json({ ok: true, token, user: u, features: await featureMap(t, u.role), notice: await notice(), survey_done: await surveyDone(t.id) });
+  return json({ ok: true, token, user: u, features: await featureMap(t, u.role), notice: await notice(), ...(await flags(t.id)) });
 }
 
 async function adminLogin(b: any) {
@@ -179,7 +186,7 @@ async function adminData() {
   const grid = batches.map((batch) => {
     const g = (k: string) => { const r = (sf || []).find((x: any) => x.batch === batch && x.feature === k); return { enabled: !!r?.enabled, ends: r?.ends || "" }; };
     const a = (bc || []).find((x: any) => x.batch === batch);
-    return { batch, survey: g("survey"), videos: g("videos"), ai: { enabled: a ? !!a.enabled : true, ends: a?.active_until || "" } };
+    return { batch, survey: g("survey"), videos: g("videos"), diary: g("diary"), review: g("review"), ai: { enabled: a ? !!a.enabled : true, ends: a?.active_until || "" } };
   });
   return json({ ok: true, trainees: tr || [], batches, features: grid, ai_master: master || { enabled: true }, notice: nt });
 }
@@ -268,6 +275,138 @@ async function videoSave(b: any) {
   return error ? fail("저장하지 못했어요: " + error.message, 500) : json({ ok: true });
 }
 
+/* ---------------- 공지사항 ---------------- */
+const visibleTo = (batch: string | null) => (n: any) => !batch || !n.batches?.length || n.batches.includes(batch);
+async function noticesList(me: Trainee | null, role: string) {
+  const { data } = await db.from("sv_notices").select("*").order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(200);
+  const list = (data || []).filter(visibleTo(role === "trainee" ? me!.batch : null));
+  let read = new Set<number>();
+  if (me) {
+    const { data: r } = await db.from("sv_notice_reads").select("notice_id").eq("trainee_id", me.id);
+    read = new Set((r || []).map((x: any) => x.notice_id));
+  }
+  return json({ ok: true, today: today(), notices: list.map((n: any) => ({ ...n, read: read.has(n.id) })) });
+}
+async function adminNotices() {
+  const [{ data: ns }, { data: rd }, { data: tr }] = await Promise.all([
+    db.from("sv_notices").select("*").order("pinned", { ascending: false }).order("created_at", { ascending: false }),
+    db.from("sv_notice_reads").select("notice_id,trainee_id"),
+    db.from("vball_trainees").select("id,name,batch,active").eq("active", true).neq("batch", INSTRUCTOR),
+  ]);
+  const out = (ns || []).map((n: any) => {
+    const target = (tr || []).filter((t: any) => visibleTo(null)(n) && (!n.batches?.length || n.batches.includes(t.batch)));
+    const readIds = new Set((rd || []).filter((r: any) => r.notice_id === n.id).map((r: any) => r.trainee_id));
+    return { ...n, target: target.length, read: target.filter((t: any) => readIds.has(t.id)).length, unread: target.filter((t: any) => !readIds.has(t.id)).map((t: any) => t.name) };
+  });
+  return json({ ok: true, notices: out });
+}
+async function noticeSave(b: any, author: string) {
+  const title = str(b.title, 100), kind = b.kind === "program" ? "program" : "notice";
+  if (!title) return fail("제목을 입력해 주세요.");
+  if (!okDate(b.date)) return fail("날짜 형식이 올바르지 않아요.");
+  const arr = (x: unknown) => (Array.isArray(x) ? x : []).map((v) => str(v, 20)).filter(Boolean);
+  const row = { kind, title, body: str(b.body, 5000), date: b.date || null, batches: arr(b.batches), pinned: b.pinned === true, author, updated_at: new Date().toISOString() };
+  const { error } = b.id ? await db.from("sv_notices").update(row).eq("id", Number(b.id)) : await db.from("sv_notices").insert(row);
+  return error ? fail("저장하지 못했어요: " + error.message, 500) : json({ ok: true });
+}
+
+/* ---------------- Gemini ---------------- */
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+async function gemini(prompt: string) {
+  const key = Deno.env.get("GEMINI_API_KEY");
+  if (!key) throw new Error("AI 키가 설정되어 있지 않아요.");
+  let last: unknown = null;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: "application/json" } }),
+      });
+      const d = await r.json();
+      if (!r.ok) { last = new Error(d?.error?.message || r.statusText); continue; }
+      const t = d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (t) return t as string;
+      last = new Error("AI 응답이 비어 있어요.");
+    } catch (e) { last = e; }
+  }
+  throw last instanceof Error ? last : new Error("AI 호출 실패");
+}
+
+/* ---------------- 배구일기 ---------------- */
+const MOTION_KO: Record<string, string> = { toss: "토스", block: "블로킹", spike: "스파이크", under: "언더 리시브", over: "오버 리시브", serve: "서브" };
+const score10 = (x: unknown) => { const n = Math.round(Number(x)); return n >= 1 && n <= 10 ? n : null; };
+async function myRecords(me: Trainee, ids?: number[]) {
+  let q = db.from("vball_records").select("id,created_at,motion_type,score,good_points,improve_points,practice_tips,ai_comment").eq("trainee_id", me.id);
+  q = ids ? q.in("id", ids.length ? ids : [-1]) : q.gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString());
+  const { data } = await q.order("created_at", { ascending: false }).limit(60);
+  return (data || []).map((r: any) => ({ ...r, motion: MOTION_KO[r.motion_type] || r.motion_type }));
+}
+async function diarySave(me: Trainee, b: any) {
+  const date = String(b.date || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > today()) return fail("날짜를 확인해 주세요.");
+  const content = str(b.content, 3000);
+  const row: Record<string, unknown> = { trainee_id: me.id, date, content, attack: score10(b.attack), defense: score10(b.defense), setting: score10(b.setting), updated_at: new Date().toISOString() };
+  if (!content && row.attack == null && row.defense == null && row.setting == null) return fail("일기 내용이나 점수를 하나 이상 입력해 주세요.");
+  if (Array.isArray(b.record_ids)) {
+    const own = await myRecords(me, b.record_ids.map(Number).filter(Boolean).slice(0, 10));
+    row.record_ids = own.map((r: any) => r.id);
+  }
+  const { data, error } = await db.from("sv_diary").upsert(row, { onConflict: "trainee_id,date" }).select().single();
+  return error ? fail("저장하지 못했어요: " + error.message, 500) : json({ ok: true, entry: data });
+}
+async function diaryFeedback(me: Trainee, b: any) {
+  const { data: e } = await db.from("sv_diary").select("*").eq("trainee_id", me.id).eq("date", String(b.date || "")).maybeSingle();
+  if (!e) return fail("먼저 일기를 저장해 주세요.");
+  if (!e.content || e.content.length < 5) return fail("AI 피드백을 받으려면 일기를 조금 더 적어 주세요.");
+  if (e.ai_at && Date.now() - new Date(e.ai_at).getTime() < 20000) return fail("잠시 후 다시 시도해 주세요.");
+  const { data: prev } = await db.from("sv_diary").select("date,attack,defense,setting").eq("trainee_id", me.id).lt("date", e.date).order("date", { ascending: false }).limit(5);
+  const recs = await myRecords(me, e.record_ids || []);
+  const sc = (x: any) => `공격 ${x.attack ?? "-"} / 수비 ${x.defense ?? "-"} / 세트 ${x.setting ?? "-"}`;
+  const prompt =
+    `당신은 초등·중등 교사 대상 배구 연수의 따뜻하고 전문적인 배구 코치입니다. 연수생(교사)이 오늘 연습 후 쓴 배구일기를 읽고 격려와 피드백을 해 주세요.\n\n` +
+    `[오늘 날짜] ${e.date}\n[오늘 스스로 매긴 점수(10점 만점)] ${sc(e)}\n` +
+    `[지난 기록] ${(prev || []).map((p: any) => `${p.date}: ${sc(p)}`).join(" · ") || "없음"}\n` +
+    (recs.length ? `[오늘 연결한 AI 동작 분석 기록]\n${recs.map((r: any) => `- ${r.motion} ${r.score ?? "-"}점 / 잘한 점: ${(r.good_points || []).join(", ")} / 개선할 점: ${(r.improve_points || []).join(", ")}`).join("\n")}\n` : "") +
+    `[일기]\n${e.content}\n\n` +
+    `규칙: 일기에 적힌 내용과 점수 변화를 구체적으로 짚어 주세요. 일기에 없는 사실을 지어내지 마세요. 부드러운 존댓말로, 의학적·과도한 조언은 피하세요.\n` +
+    `반드시 아래 JSON 형식으로만 답하세요.\n` +
+    `{"cheer": "공감과 격려 2~3문장", "feedback": ["잘 안 된 부분에 대한 원인과 해결 팁 1 (한두 문장)", "팁 2"], "tomorrow": "다음 연습 때 해볼 한 가지 (한 문장)"}`;
+  const raw = await gemini(prompt);
+  let parsed: any;
+  try { parsed = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch { parsed = { cheer: raw.slice(0, 800), feedback: [], tomorrow: "" }; }
+  const fb = JSON.stringify({ cheer: str(parsed.cheer, 800), feedback: (Array.isArray(parsed.feedback) ? parsed.feedback : []).slice(0, 4).map((x: unknown) => str(x, 400)), tomorrow: str(parsed.tomorrow, 300) });
+  const { data } = await db.from("sv_diary").update({ ai_feedback: fb, ai_at: new Date().toISOString() }).eq("id", e.id).select().single();
+  return json({ ok: true, entry: data });
+}
+async function adminDiary() {
+  const [{ data: d }, { data: t }] = await Promise.all([
+    db.from("sv_diary").select("*").order("date", { ascending: false }).limit(3000),
+    db.from("vball_trainees").select("id,name,batch").neq("batch", INSTRUCTOR),
+  ]);
+  const by = new Map((t || []).map((x: any) => [x.id, x]));
+  return json({ ok: true, entries: (d || []).filter((e: any) => by.has(e.trainee_id)).map((e: any) => ({ ...e, name: by.get(e.trainee_id).name, batch: by.get(e.trainee_id).batch })) });
+}
+
+/* ---------------- 연수 후기 ---------------- */
+async function reviewSave(me: Trainee, b: any) {
+  const content = str(b.content, 3000);
+  const rating = Math.round(Number(b.rating));
+  if (!(rating >= 1 && rating <= 5)) return fail("별점을 골라 주세요.");
+  if (content.length < 10) return fail("후기를 조금 더 적어 주세요. (10자 이상)");
+  const name_mode = ["name", "initial", "anon"].includes(b.name_mode) ? b.name_mode : "initial";
+  const row = { trainee_id: me.id, rating, content, best: str(b.best, 200) || null, name_mode, consent: b.consent === true, updated_at: new Date().toISOString() };
+  const { error } = await db.from("sv_reviews").upsert(row);
+  return error ? fail("저장하지 못했어요.", 500) : json({ ok: true, review: row });
+}
+async function adminReviews() {
+  const [{ data: r }, { data: t }] = await Promise.all([
+    db.from("sv_reviews").select("*").order("updated_at", { ascending: false }),
+    db.from("vball_trainees").select("id,name,batch"),
+  ]);
+  const by = new Map((t || []).map((x: any) => [x.id, x]));
+  return json({ ok: true, reviews: (r || []).map((x: any) => ({ ...x, name: by.get(x.trainee_id)?.name || "(삭제된 계정)", batch: by.get(x.trainee_id)?.batch || "" })) });
+}
+
 /* ---------------- 라우터 ---------------- */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -283,10 +422,32 @@ Deno.serve(async (req) => {
     const feats = await featureMap(s.trainee, s.role);
     const need = (k: keyof typeof feats) => feats[k] || s.role !== "trainee" ? null : fail("지금은 열려 있지 않은 기능이에요.", 403);
 
-    if (a === "me") return json({ ok: true, user: s.trainee ? pub(s.trainee) : { id: null, name: "관리자", batch: "", role: "admin" }, features: feats, notice: await notice(), survey_done: await surveyDone(s.trainee?.id ?? null) });
+    if (a === "me") return json({ ok: true, user: s.trainee ? pub(s.trainee) : { id: null, name: "관리자", batch: "", role: "admin" }, features: feats, notice: await notice(), ...(await flags(s.trainee?.id ?? null)) });
     if (a === "survey_get") { if (!s.trainee) return fail("연수생 계정으로 이용해 주세요."); return need("survey") || await surveyGet(s.trainee); }
     if (a === "survey_save") { if (!s.trainee) return fail("연수생 계정으로 이용해 주세요."); return need("survey") || await surveySave(s.trainee, b); }
     if (a === "videos") return need("videos") || await videosList(s.role === "trainee" ? s.trainee!.batch : null);
+    if (a === "notices") return await noticesList(s.trainee, s.role);
+    if (a === "notice_read") {
+      if (s.trainee) await db.from("sv_notice_reads").upsert({ notice_id: Number(b.id), trainee_id: s.trainee.id }, { ignoreDuplicates: true });
+      return json({ ok: true });
+    }
+    if (s.trainee && a.startsWith("diary_")) {
+      const blocked = need("diary"); if (blocked) return blocked;
+      if (a === "diary_list") {
+        const { data } = await db.from("sv_diary").select("*").eq("trainee_id", s.trainee.id).order("date", { ascending: true }).limit(400);
+        return json({ ok: true, today: today(), entries: data || [] });
+      }
+      if (a === "diary_records") return json({ ok: true, records: await myRecords(s.trainee, Array.isArray(b.ids) ? b.ids.map(Number) : undefined) });
+      if (a === "diary_save") return await diarySave(s.trainee, b);
+      if (a === "diary_feedback") return await diaryFeedback(s.trainee, b);
+      if (a === "diary_delete") { await db.from("sv_diary").delete().eq("trainee_id", s.trainee.id).eq("date", String(b.date || "")); return json({ ok: true }); }
+    }
+    if (s.trainee && a === "review_get") {
+      const blocked = need("review"); if (blocked) return blocked;
+      const { data } = await db.from("sv_reviews").select("*").eq("trainee_id", s.trainee.id).maybeSingle();
+      return json({ ok: true, review: data || null });
+    }
+    if (s.trainee && a === "review_save") return need("review") || await reviewSave(s.trainee, b);
     if (a === "video_log") {
       await db.from("sv_video_logs").insert({ trainee_id: s.trainee?.id ?? null, name: s.tok.n, video_id: str(b.video_id, 20) });
       return json({ ok: true });
@@ -316,6 +477,12 @@ Deno.serve(async (req) => {
         const { data } = await db.from("sv_video_logs").select("*").order("at", { ascending: false }).limit(500);
         return json({ ok: true, logs: data || [] });
       }
+      if (a === "admin_notices") return await adminNotices();
+      if (a === "admin_notice_save") return await noticeSave(b, s.tok.n);
+      if (a === "admin_notice_delete") { await db.from("sv_notices").delete().eq("id", Number(b.id)); return json({ ok: true }); }
+      if (a === "admin_diary") return await adminDiary();
+      if (a === "admin_reviews") return await adminReviews();
+      if (a === "admin_review_pick") { await db.from("sv_reviews").update({ picked: b.picked === true }).eq("trainee_id", Number(b.trainee_id)); return json({ ok: true }); }
       if (a === "admin_notice") {
         await db.from("sv_config").upsert({ key: "notice", value: str(b.text, 300) });
         return json({ ok: true });

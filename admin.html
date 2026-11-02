@@ -132,7 +132,9 @@ td.nw{white-space:nowrap}
     <button data-t="survey">📋 희망 조사 결과</button>
     <button data-t="videos">🎬 영상 자료실</button>
     <button data-t="logs">👀 열람 기록</button>
-    <button data-t="notice">📢 공지</button>
+    <button data-t="notice">📢 공지사항</button>
+    <button data-t="diary">📓 배구일기</button>
+    <button data-t="reviews">💬 연수 후기</button>
   </div></nav>
 
   <!-- 연수생·강사 -->
@@ -258,15 +260,63 @@ td.nw{white-space:nowrap}
     <div class="card scroll"><table class="cards"><thead><tr><th>시간</th><th>이름</th><th>영상</th></tr></thead><tbody id="lT"></tbody></table></div>
   </section>
 
-  <!-- 공지 -->
+  <!-- 공지사항 -->
   <section class="wrap hidden" data-s="notice">
     <div class="card">
-      <h3>홈 화면 공지</h3>
-      <p class="hint">연수생 홈 화면 맨 위에 보여요. 비우면 숨겨져요. (300자)</p>
-      <textarea id="nText" class="field" rows="4" maxlength="300"></textarea>
-      <button class="btn p" id="nSave" style="margin-top:10px">저장</button>
+      <h3 id="nfTitle">새 글 쓰기</h3>
+      <p class="hint">연수생 앱의 [공지사항]에 보여요. <b>오늘의 프로그램</b>으로 쓰고 날짜를 넣으면, 그날 연수생 홈 화면 맨 위에 크게 떠요.</p>
+      <div class="row" style="margin-bottom:8px">
+        <label><input type="radio" name="nKind" value="notice" checked> 📢 공지</label>
+        <label><input type="radio" name="nKind" value="program"> 📅 오늘의 연수 프로그램</label>
+      </div>
+      <div class="grid">
+        <label class="lb" style="grid-column:span 2">제목<input id="nTitle" class="field" maxlength="100" placeholder="예) 1일차 프로그램 안내"></label>
+        <label class="lb">날짜 <span style="font-weight:400">(프로그램은 필수)</span><input id="nDate" type="date" class="field"></label>
+      </div>
+      <label class="lb" style="margin-top:8px">내용<textarea id="nBody" class="field" rows="9" maxlength="5000" placeholder="09:00~09:30  개회식 및 몸풀기&#10;09:30~11:00  선택연습 (리시브 / 수비 / 공격 / 세터)&#10;11:00~12:00  시스템훈련&#10;&#10;준비물: 실내화, 물"></textarea></label>
+      <button class="btn g sm" id="nTpl" style="margin-top:6px">⏱ 시간표 틀 넣기</button>
+      <div class="lb" style="margin-top:10px">볼 수 있는 기수 <span style="font-weight:400">(아무것도 안 고르면 모든 기수)</span></div>
+      <div class="batchchk" id="nBatches"></div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:700"><input type="checkbox" id="nPin"> 📌 맨 위에 고정</label>
+      <div class="row" style="margin-top:12px"><button class="btn p" id="nSave">올리기</button><button class="btn g" id="nClear">새로 쓰기</button></div>
       <div id="nMsg" class="msg"></div>
     </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">올린 글</h3><button class="btn g sm" id="nReload"><i class="fa-solid fa-rotate"></i> 새로고침</button></div>
+      <div class="scroll" style="margin-top:10px"><table class="cards"><thead><tr><th>종류</th><th>날짜</th><th>제목</th><th>기수</th><th>읽음</th><th></th></tr></thead><tbody id="nT"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>홈 화면 한 줄 공지 <span class="hint" style="font-weight:400">(선택 · 급한 알림용)</span></h3>
+      <textarea id="nText" class="field" rows="2" maxlength="300" placeholder="비우면 숨겨져요."></textarea>
+      <button class="btn g" id="n1Save" style="margin-top:8px">저장</button>
+      <div id="n1Msg" class="msg"></div>
+    </div>
+  </section>
+
+  <!-- 배구일기 -->
+  <section class="wrap hidden" data-s="diary">
+    <div class="row" style="margin-bottom:12px;justify-content:space-between">
+      <div class="row"><select id="dB" class="field" style="width:auto"></select><select id="dN" class="field" style="width:auto"></select><button class="btn g sm" id="dReload"><i class="fa-solid fa-rotate"></i> 새로고침</button></div>
+      <button class="btn n" id="dXls"><i class="fa-solid fa-file-excel"></i> 엑셀로 저장</button>
+    </div>
+    <div class="stats" id="dStats"></div>
+    <div class="card"><h3>날짜별 평균 자기 점수 <span class="hint" style="font-weight:400" id="dAvgHint"></span></h3>
+      <div class="scroll"><table><thead><tr><th>날짜</th><th>작성</th><th>공격</th><th>수비</th><th>세트</th></tr></thead><tbody id="dAvg"></tbody></table></div></div>
+    <div class="card"><h3>일기 목록</h3>
+      <div class="scroll"><table class="cards"><thead><tr><th>날짜</th><th>이름</th><th>공·수·세</th><th>일기</th><th>AI</th></tr></thead><tbody id="dT"></tbody></table></div></div>
+  </section>
+
+  <!-- 연수 후기 -->
+  <section class="wrap hidden" data-s="reviews">
+    <div class="row" style="margin-bottom:12px;justify-content:space-between">
+      <div class="row"><select id="rB" class="field" style="width:auto"></select>
+        <label style="font-weight:700"><input type="checkbox" id="rOnly"> 홍보 동의한 후기만</label>
+        <label style="font-weight:700"><input type="checkbox" id="rPicked"> ⭐ 고른 후기만</label></div>
+      <div class="row"><button class="btn g" id="rCopy"><i class="fa-solid fa-copy"></i> 홍보 문구로 복사</button><button class="btn n" id="rXls"><i class="fa-solid fa-file-excel"></i> 엑셀로 저장</button></div>
+    </div>
+    <div class="stats" id="rStats"></div>
+    <p class="hint">⭐를 눌러 홍보에 쓸 후기를 골라 두세요. "홍보 문구로 복사"는 <b>홍보 동의</b>한 후기만, 연수생이 고른 이름 표시 방식(실명/성만/익명)으로 복사해요.</p>
+    <div id="rList"></div>
   </section>
 </div>
 
@@ -318,7 +368,7 @@ async function load() {
   const d = await api('admin_data');
   if (!d.ok) return alert(d.message || '불러오지 못했어요.');
   D = d; $('nText').value = d.notice || '';
-  renderPeople(); renderFeatures(); renderVBatches(); renderChips();
+  renderPeople(); renderFeatures(); renderVBatches(); renderChips(); renderNBatches();
 }
 
 /* ---------------- 탭 ---------------- */
@@ -330,6 +380,9 @@ function showTab(t) {
   if (t === 'survey') loadSurvey();
   if (t === 'videos') loadVideos();
   if (t === 'logs') loadLogs();
+  if (t === 'notice') loadNotices();
+  if (t === 'diary') loadDiaryA();
+  if (t === 'reviews') loadReviews();
   window.scrollTo(0, 0);
 }
 
@@ -460,7 +513,9 @@ $('bulkGo').onclick = async () => {
 const FEAT = [
   ['survey', 'fa-clipboard-list', '연습 희망 조사', 'var(--coral-d)'],
   ['ai', 'fa-wand-magic-sparkles', 'AI 동작 분석', 'var(--info)'],
+  ['diary', 'fa-book', '배구일기', '#2B6CB0'],
   ['videos', 'fa-circle-play', '영상 자료실', 'var(--teal)'],
+  ['review', 'fa-heart', '연수 후기', '#C53071'],
 ];
 function renderFeatures() {
   const g = $('fGrid'); g.innerHTML = '';
@@ -597,7 +652,123 @@ function renderLogs() {
 $('lName').onchange = renderLogs; $('lReload').onclick = loadLogs;
 
 /* ---------------- 공지 ---------------- */
-$('nSave').onclick = async () => { const d = await api('admin_notice', { text: $('nText').value }); say('nMsg', d.ok ? '저장했어요.' : d.message, !d.ok); };
+$('n1Save').onclick = async () => { const d = await api('admin_notice', { text: $('nText').value }); say('n1Msg', d.ok ? '저장했어요.' : d.message, !d.ok); };
+let editN = null, NS = [];
+const kindOf = () => document.querySelector('input[name=nKind]:checked').value;
+function renderNBatches(sel = []) { $('nBatches').innerHTML = D.batches.map(b => `<label><input type="checkbox" value="${esc(b)}" ${sel.includes(b) ? 'checked' : ''}> ${esc(b)}</label>`).join(''); }
+$('nTpl').onclick = () => { if ($('nBody').value && !confirm('지금 내용 아래에 시간표 틀을 붙일까요?')) return; $('nBody').value += ($('nBody').value ? '\n\n' : '') + '09:00~09:30  \n09:30~10:30  \n10:40~12:00  \n12:00~13:00  점심\n13:00~14:30  \n14:40~16:00  \n\n준비물: \n장소: '; };
+function clearN() { editN = null; $('nfTitle').textContent = '새 글 쓰기'; $('nSave').textContent = '올리기'; ['nTitle', 'nDate', 'nBody'].forEach(i => $(i).value = ''); $('nPin').checked = false; document.querySelector('input[name=nKind][value=notice]').checked = true; renderNBatches(); }
+$('nClear').onclick = () => { clearN(); say('nMsg', ''); };
+$('nSave').onclick = async () => {
+  const kind = kindOf();
+  if (kind === 'program' && !$('nDate').value) return say('nMsg', '오늘의 프로그램은 날짜를 넣어 주세요.', true);
+  const d = await api('admin_notice_save', { id: editN, kind, title: $('nTitle').value, body: $('nBody').value, date: $('nDate').value, pinned: $('nPin').checked, batches: [...document.querySelectorAll('#nBatches input:checked')].map(x => x.value) });
+  say('nMsg', d.ok ? (editN ? '수정했어요.' : '올렸어요.') : d.message, !d.ok);
+  if (d.ok) { clearN(); loadNotices(); }
+};
+async function loadNotices() {
+  const d = await api('admin_notices'); if (!d.ok) return; NS = d.notices;
+  const tb = $('nT'); tb.innerHTML = NS.length ? '' : '<tr><td colspan="6" class="hint">아직 올린 글이 없어요.</td></tr>';
+  NS.forEach(n => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td data-l="종류" class="nw">${n.kind === 'program' ? '<span class="chip">📅 프로그램</span>' : '<span class="chip i">📢 공지</span>'}</td>
+      <td data-l="날짜" class="nw">${esc(n.date || new Date(n.created_at).toLocaleDateString('ko-KR'))}</td>
+      <td data-l="제목"><b>${n.pinned ? '📌 ' : ''}${esc(n.title)}</b><div class="hint" style="margin:0">${esc(n.author || '')}</div></td>
+      <td data-l="기수">${n.batches.length ? n.batches.map(b => `<span class="chip">${esc(b)}</span>`).join(' ') : '<span class="chip ok">전체</span>'}</td>
+      <td data-l="읽음" class="nw"><b>${n.read}</b> / ${n.target}명 ${n.unread.length ? `<button class="btn g sm" data-a="u">안 읽은 사람</button>` : ''}</td>
+      <td class="nw"><button class="btn g sm" data-a="e">수정</button> <button class="btn d sm" data-a="d">삭제</button></td>`;
+    tr.querySelector('[data-a=u]')?.addEventListener('click', () => alert(`안 읽은 사람 (${n.unread.length}명)\n\n` + n.unread.join(', ')));
+    tr.querySelector('[data-a=e]').onclick = () => {
+      editN = n.id; $('nfTitle').textContent = '글 수정'; $('nSave').textContent = '수정 저장';
+      document.querySelector(`input[name=nKind][value=${n.kind}]`).checked = true;
+      $('nTitle').value = n.title; $('nDate').value = n.date || ''; $('nBody').value = n.body; $('nPin').checked = n.pinned; renderNBatches(n.batches);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    tr.querySelector('[data-a=d]').onclick = async () => { if (confirm(`"${n.title}" 글을 삭제할까요?`)) { await api('admin_notice_delete', { id: n.id }); loadNotices(); } };
+    tb.append(tr);
+  });
+}
+$('nReload').onclick = loadNotices;
+
+/* ---------------- 배구일기 ---------------- */
+let DE = [];
+async function loadDiaryA() {
+  const d = await api('admin_diary'); if (!d.ok) return alert(d.message); DE = d.entries;
+  const bs = [...new Set(D.trainees.filter(t => t.batch !== INST).map(t => t.batch || '1기'))].sort(ko), cb = $('dB').value;
+  $('dB').innerHTML = '<option value="">전체 기수</option>' + bs.map(b => `<option>${esc(b)}</option>`).join(''); $('dB').value = bs.includes(cb) ? cb : '';
+  fillDN(); renderDiaryA();
+}
+function fillDN() {
+  const b = $('dB').value, cur = $('dN').value;
+  const ns = D.trainees.filter(t => t.batch !== INST && (!b || t.batch === b)).map(t => t.name).sort(ko);
+  $('dN').innerHTML = '<option value="">전체 연수생</option>' + ns.map(n => `<option>${esc(n)}</option>`).join(''); $('dN').value = ns.includes(cur) ? cur : '';
+}
+$('dB').onchange = () => { fillDN(); renderDiaryA(); }; $('dN').onchange = renderDiaryA; $('dReload').onclick = loadDiaryA;
+const avg = a => { const v = a.filter(x => x != null); return v.length ? (v.reduce((p, c) => p + c, 0) / v.length).toFixed(1) : '-'; };
+function renderDiaryA() {
+  const b = $('dB').value, n = $('dN').value;
+  const list = DE.filter(e => (!b || e.batch === b) && (!n || e.name === n));
+  const people = new Set(list.map(e => e.trainee_id)).size;
+  $('dStats').innerHTML = [['일기 수', list.length + '편'], ['쓴 사람', people + '명'], ['평균 공격', avg(list.map(e => e.attack))], ['평균 수비', avg(list.map(e => e.defense))], ['평균 세트', avg(list.map(e => e.setting))]]
+    .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+  const byDate = {}; list.forEach(e => (byDate[e.date] = byDate[e.date] || []).push(e));
+  $('dAvgHint').textContent = n ? `(${n})` : '(10점 만점, 연수생 스스로 매긴 점수)';
+  $('dAvg').innerHTML = Object.keys(byDate).sort().reverse().map(dt => { const a = byDate[dt]; return `<tr><td class="nw">${dt}</td><td>${a.length}명</td><td>${avg(a.map(e => e.attack))}</td><td>${avg(a.map(e => e.defense))}</td><td>${avg(a.map(e => e.setting))}</td></tr>`; }).join('') || '<tr><td colspan="5" class="hint">아직 기록이 없어요.</td></tr>';
+  $('dT').innerHTML = list.map(e => {
+    let f = null; try { f = e.ai_feedback ? JSON.parse(e.ai_feedback) : null; } catch {}
+    return `<tr><td data-l="날짜" class="nw">${e.date}</td><td data-l="이름" class="nw"><b>${esc(e.name)}</b> <span class="chip">${esc(e.batch)}</span></td>
+      <td data-l="점수" class="nw">${e.attack ?? '-'} · ${e.defense ?? '-'} · ${e.setting ?? '-'}</td>
+      <td data-l="일기" style="white-space:pre-wrap;min-width:240px">${esc(e.content)}</td>
+      <td data-l="AI" style="min-width:160px" class="hint">${f ? esc(f.tomorrow || f.cheer || '') : ''}</td></tr>`;
+  }).join('') || '<tr><td colspan="5" class="hint">아직 기록이 없어요.</td></tr>';
+}
+$('dXls').onclick = () => {
+  if (typeof XLSX === 'undefined') return;
+  const rows = [['날짜', '이름', '기수', '공격', '수비', '세트', '일기', 'AI 피드백']].concat(DE.map(e => { let f = ''; try { const o = JSON.parse(e.ai_feedback || 'null'); if (o) f = [o.cheer, ...(o.feedback || []), o.tomorrow].filter(Boolean).join('\n'); } catch {} return [e.date, e.name, e.batch, e.attack, e.defense, e.setting, e.content, f]; }));
+  const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 11 }, { wch: 10 }, { wch: 6 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 60 }, { wch: 60 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '배구일기'); XLSX.writeFile(wb, '배구일기.xlsx');
+};
+
+/* ---------------- 연수 후기 ---------------- */
+let RV = [];
+const showName = r => r.name_mode === 'name' ? r.name + ' 선생님' : r.name_mode === 'anon' ? (r.batch || '') + ' 연수생' : r.name.charAt(0) + 'OO 선생님';
+async function loadReviews() {
+  const d = await api('admin_reviews'); if (!d.ok) return alert(d.message); RV = d.reviews;
+  const bs = [...new Set(RV.map(r => r.batch))].filter(Boolean).sort(ko), cur = $('rB').value;
+  $('rB').innerHTML = '<option value="">전체 기수</option>' + bs.map(b => `<option>${esc(b)}</option>`).join(''); $('rB').value = bs.includes(cur) ? cur : '';
+  renderReviews();
+}
+const rFiltered = () => RV.filter(r => (!$('rB').value || r.batch === $('rB').value) && (!$('rOnly').checked || r.consent) && (!$('rPicked').checked || r.picked));
+function renderReviews() {
+  const list = rFiltered(), all = RV.filter(r => !$('rB').value || r.batch === $('rB').value);
+  $('rStats').innerHTML = [['후기', all.length + '편'], ['평균 만족도', all.length ? '★ ' + (all.reduce((a, r) => a + r.rating, 0) / all.length).toFixed(1) : '-'], ['홍보 동의', all.filter(r => r.consent).length + '편'], ['고른 후기', all.filter(r => r.picked).length + '편']]
+    .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+  const box = $('rList'); box.innerHTML = list.length ? '' : '<div class="card hint">아직 후기가 없어요. [기수별 기능]에서 연수 후기를 열어 주세요.</div>';
+  list.forEach(r => {
+    const c = document.createElement('div'); c.className = 'card';
+    c.innerHTML = `<div class="row" style="justify-content:space-between"><div class="row"><b>${esc(r.name)}</b><span class="chip">${esc(r.batch)}</span><span style="color:#F5A623;letter-spacing:1px">${'★'.repeat(r.rating)}<span style="color:#D5DAE3">${'★'.repeat(5 - r.rating)}</span></span>
+      ${r.consent ? `<span class="chip ok">홍보 동의 · ${esc(showName(r))}</span>` : '<span class="chip no">홍보 비동의</span>'}</div>
+      <button class="btn ${r.picked ? 'p' : 'g'} sm">${r.picked ? '⭐ 고름' : '☆ 고르기'}</button></div>
+      ${r.best ? `<p style="font-weight:800;margin:10px 0 0">“${esc(r.best)}”</p>` : ''}
+      <p style="white-space:pre-wrap;margin:8px 0 0;line-height:1.7">${esc(r.content)}</p>
+      <div class="hint" style="margin:8px 0 0">${new Date(r.updated_at).toLocaleString('ko-KR')}</div>`;
+    c.querySelector('button').onclick = async () => { r.picked = !r.picked; await api('admin_review_pick', { trainee_id: r.trainee_id, picked: r.picked }); renderReviews(); };
+    box.append(c);
+  });
+}
+['rB', 'rOnly', 'rPicked'].forEach(i => $(i).onchange = renderReviews);
+$('rCopy').onclick = async () => {
+  const list = rFiltered().filter(r => r.consent);
+  if (!list.length) return alert('홍보에 동의한 후기가 없어요.');
+  const txt = list.map(r => `${r.best ? `“${r.best}”\n` : ''}${r.content}\n- ${showName(r)} (${r.batch} 연수생) ${'★'.repeat(r.rating)}`).join('\n\n');
+  try { await navigator.clipboard.writeText(txt); alert(`${list.length}편을 복사했어요. 원하는 곳에 붙여넣으세요.`); } catch { prompt('아래 내용을 복사하세요.', txt); }
+};
+$('rXls').onclick = () => {
+  if (typeof XLSX === 'undefined') return;
+  const rows = [['이름', '기수', '별점', '한 줄', '후기', '홍보 동의', '표시 이름', '고름', '작성']].concat(RV.map(r => [r.name, r.batch, r.rating, r.best || '', r.content, r.consent ? 'O' : 'X', r.consent ? showName(r) : '', r.picked ? '⭐' : '', new Date(r.updated_at).toLocaleString('ko-KR')]));
+  const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 10 }, { wch: 6 }, { wch: 5 }, { wch: 40 }, { wch: 70 }, { wch: 8 }, { wch: 14 }, { wch: 5 }, { wch: 20 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '연수후기'); XLSX.writeFile(wb, '연수후기.xlsx');
+};
 
 token = pickToken();
 token ? start() : $('login').classList.remove('hidden');

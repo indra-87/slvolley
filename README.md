@@ -6,10 +6,13 @@
 | 화면 | 주소 | 내용 |
 |---|---|---|
 | 연수생 홈 | `/index.html` | 로그인, 공지, 기능 바로가기 |
+| 공지사항 | `/index.html#notices` | 강사 공지 + 오늘의 연수 프로그램(그날 홈 화면 맨 위에 표시), 읽음 확인 |
 | 연습 희망 조사 | `/index.html#survey` | ① 선택연습 희망 파트(리시브/수비/공격/세터) + 자유 의견 ② 시스템훈련 희망 포지션(9칸 코트) |
 | AI 동작 분석 | `/ai.html` | 기존 AI 동작 분석 앱 (촬영 → AI 피드백, 성장 기록, 영상 주고받기) |
+| 배구일기 | `/index.html#diary` | 공격·수비·세트 자기 점수(10점) + 일기 → AI 코치 격려·피드백, 점수 변화 그래프, AI 성장 기록 가져오기 |
 | 영상 자료실 | `/index.html#videos` | 유튜브 일부공개 영상을 링크 유출 없이 보기 (이름 워터마크, 열람 기록) |
-| 강사 관리자 | `/admin.html` | 명단, 기수별 기능 ON/OFF, 희망 조사 결과, 영상 등록, 열람 기록, 공지 |
+| 연수 후기 | `/index.html#review` | 별점·한 줄·후기, 홍보 활용 동의와 이름 표시 방식 선택 |
+| 강사 관리자 | `/admin.html` | 명단, 기수별 기능 ON/OFF, 희망 조사 결과, 영상, 열람 기록, 공지사항, 배구일기 보기, 연수 후기 모음(홍보 문구 복사) |
 
 ## 구조
 
@@ -21,6 +24,7 @@ config.js       서버 주소 설정 (여기만 바꾸면 됨)
 supabase/
   functions/sv-api/index.ts         통합 API (Supabase Edge Function)
   migrations/001_sv_integrated.sql  통합 앱용 테이블
+  migrations/002_notices_diary_review.sql  공지사항·배구일기·연수 후기
 ```
 
 - 서버와 DB는 기존 AI 동작 분석 앱과 같은 Supabase 프로젝트(`ibgrow`)를 씁니다.
