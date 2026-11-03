@@ -82,6 +82,13 @@ td.nw{white-space:nowrap}
 .mc::before{content:"네트";position:absolute;top:5px;left:0;right:0;text-align:center;font-size:11px;color:#A9B4CC;letter-spacing:.3em}
 .mc div{background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:10px 4px;text-align:center;font-weight:700;font-size:13px}
 .mc div b{display:block;font-size:22px;font-family:'Barlow Condensed';color:var(--coral)}
+.cgrp{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--line)}
+.cgrp:last-child{border-bottom:0}
+.cgrp .gh{flex:none;width:92px;padding-top:4px}
+.cgrp .gh b{display:block;font-size:13px}
+.cgrp .gh button{border:0;background:none;color:var(--coral-d);font-size:11.5px;font-weight:700;padding:0;margin-top:2px}
+.cgrp .gc{flex:1;min-width:0}
+.pchip.on{background:var(--navy);color:#fff}
 .pchip{display:inline-block;background:#EBF0FF;color:var(--navy-3);border-radius:12px;padding:2px 10px;margin:2px;font-size:12.5px;cursor:pointer}
 .batchchk{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
 .batchchk label{display:flex;gap:6px;align-items:center;font-weight:700}
@@ -243,8 +250,8 @@ td.nw{white-space:nowrap}
       <div class="lb" style="margin-top:10px">볼 수 있는 기수 <span style="font-weight:400">(아무것도 안 고르면 모든 기수)</span></div>
       <div class="batchchk" id="vBatches"></div>
       <label class="lb" style="margin-top:10px">출연 연수생 (쉼표로 구분)<input id="vPlayers" class="field" placeholder="홍길동, 김철수"></label>
-      <div id="vChips" style="margin-top:6px;max-height:110px;overflow:auto"></div>
-      <p class="hint">이름을 누르면 추가돼요. 명단 이름과 같아야 연수생의 '내가 나온 영상'에 보여요.</p>
+      <div id="vChips" style="margin-top:6px;max-height:260px;overflow:auto"></div>
+      <p class="hint">기수별로 나뉘어 있어요. 이름을 누르면 추가되고, 한 번 더 누르면 빠져요. 위에서 볼 수 있는 기수를 고르면 그 기수 연수생만 보여요.</p>
       <div class="row"><button class="btn p" id="vSave">저장</button><button class="btn g" id="vClear">새로 입력</button></div>
       <div id="vMsg" class="msg"></div>
     </div>
@@ -605,15 +612,39 @@ $('sXls').onclick = () => {
 /* ---------------- 영상 자료실 ---------------- */
 let editV = null;
 const ytId = s => { s = s.trim(); if (/^[\w-]{6,20}$/.test(s) && !s.includes('.')) return s; const m = s.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{6,20})/); return m ? m[1] : ''; };
-function renderVBatches(sel = []) { $('vBatches').innerHTML = D.batches.map(b => `<label><input type="checkbox" value="${esc(b)}" ${sel.includes(b) ? 'checked' : ''}> ${esc(b)}</label>`).join(''); }
+function renderVBatches(sel = []) {
+  $('vBatches').innerHTML = D.batches.map(b => `<label><input type="checkbox" value="${esc(b)}" ${sel.includes(b) ? 'checked' : ''}> ${esc(b)}</label>`).join('');
+  $('vBatches').querySelectorAll('input').forEach(x => x.onchange = renderChips);
+  renderChips();
+}
+// 출연 연수생: 기수별로 묶어서 보여 줌. "볼 수 있는 기수"를 고르면 그 기수만.
+const curPlayers = () => $('vPlayers').value.split(',').map(x => x.trim()).filter(Boolean);
+function setPlayers(list) { $('vPlayers').value = [...new Set(list)].join(', '); renderChips(); }
 function renderChips() {
-  $('vChips').innerHTML = '';
-  D.trainees.filter(t => t.batch !== INST).sort((a, b) => ko(a.batch, b.batch) || ko(a.name, b.name)).forEach(t => {
-    const s = document.createElement('span'); s.className = 'pchip'; s.textContent = t.name;
-    s.onclick = () => { const cur = $('vPlayers').value.split(',').map(x => x.trim()).filter(Boolean); if (!cur.includes(t.name)) cur.push(t.name); $('vPlayers').value = cur.join(', '); };
-    $('vChips').append(s);
+  const box = $('vChips'); if (!box || !D.batches) return;
+  box.innerHTML = '';
+  const picked = [...document.querySelectorAll('#vBatches input:checked')].map(x => x.value);
+  const groups = (picked.length ? picked : D.batches);
+  const cur = new Set(curPlayers());
+  const people = D.trainees.filter(t => t.batch !== INST && t.active !== false);
+  groups.forEach(b => {
+    const list = people.filter(t => inB(t, b)).sort((x, y) => ko(x.name, y.name));
+    const g = document.createElement('div'); g.className = 'cgrp';
+    g.innerHTML = `<div class="gh"><b>${esc(b)} <span class="hint" style="margin:0;font-weight:400">${list.length}명</span></b>${list.length ? '<button type="button">모두 추가</button>' : ''}</div><div class="gc"></div>`;
+    const gc = g.querySelector('.gc');
+    if (!list.length) gc.innerHTML = '<span class="hint">등록된 연수생이 없어요.</span>';
+    list.forEach(t => {
+      const c = document.createElement('span'); c.className = 'pchip' + (cur.has(t.name) ? ' on' : '');
+      c.textContent = t.name + (bl(t).length > 1 ? ' (' + bt(t) + ')' : '');
+      c.title = cur.has(t.name) ? '누르면 빼요' : '누르면 추가해요';
+      c.onclick = () => { const l = curPlayers(); setPlayers(l.includes(t.name) ? l.filter(n => n !== t.name) : [...l, t.name]); };
+      gc.append(c);
+    });
+    g.querySelector('.gh button')?.addEventListener('click', () => setPlayers([...curPlayers(), ...list.map(t => t.name)]));
+    box.append(g);
   });
 }
+$('vPlayers').addEventListener('input', renderChips);
 async function loadVideos() {
   const d = await api('admin_videos'); if (!d.ok) return; V = d.videos;
   $('vT').innerHTML = V.length ? '' : '<tr><td colspan="6" class="hint">아직 영상이 없어요.</td></tr>';
