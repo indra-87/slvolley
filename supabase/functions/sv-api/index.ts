@@ -333,9 +333,11 @@ async function traineeDelete(id: number) {
   }
   const { error } = await db.from("vball_trainees").delete().eq("id", id);
   if (error) return fail("계정을 지우지 못했어요: " + error.message, 500);
-  let removed = 0;
-  for (const f of mine) if (await nasDelete(f)) removed++;
-  return json({ ok: true, files: mine.length, files_removed: removed });
+  // NAS 영상 정리는 시간이 걸려서(파일당 3~6초) 응답을 먼저 보내고 뒤에서 동시에 처리
+  const cleanup = Promise.all(mine.map(nasDelete)).then((r) => console.log(`NAS 정리: ${r.filter(Boolean).length}/${mine.length}`));
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(cleanup); else await cleanup;
+  return json({ ok: true, files: mine.length });
 }
 
 /* ---------------- 공지사항 ---------------- */

@@ -13,6 +13,7 @@ window.svApi = async function (action, body = {}, opts = {}) {
   try {
     r = await fetch(SV_CONFIG.API_URL, {
       method: "POST",
+      cache: "no-store",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
       body: JSON.stringify({ action, ...body }),
     });
