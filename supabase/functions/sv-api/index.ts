@@ -284,6 +284,60 @@ async function videoSave(b: any) {
   return error ? fail("저장하지 못했어요: " + error.message, 500) : json({ ok: true });
 }
 
+/* ---------------- 계정 삭제 (기록까지 함께) ---------------- */
+// 삭제 전에 지워질 기록 수를 알려 준다
+async function traineeCheck(id: number) {
+  const n = async (t: string, col: string, extra?: (q: any) => any) => {
+    let q = db.from(t).select("*", { count: "exact", head: true }).eq(col, id);
+    if (extra) q = extra(q);
+    const { count } = await q; return count || 0;
+  };
+  const [records, library, shared, diary, survey, review] = await Promise.all([
+    n("vball_records", "trainee_id"), n("vball_video_library", "owner_trainee_id"),
+    n("vball_shared_videos", "to_trainee_id", (q) => q.eq("status", "pending")),
+    n("sv_diary", "trainee_id"), n("sv_survey", "trainee_id"), n("sv_reviews", "trainee_id"),
+  ]);
+  return json({ ok: true, counts: { records, library, shared, diary, survey, review } });
+}
+// NAS 영상 파일은 기존 AI 분석 서버(vball-api)의 삭제 기능으로 지운다
+async function nasDelete(filename: string) {
+  try {
+    const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/vball-api?action=delete_video&filename=${encodeURIComponent(filename)}`, { method: "POST" });
+    return r.ok;
+  } catch { return false; }
+}
+async function traineeDelete(id: number) {
+  const { data: t } = await db.from("vball_trainees").select("id,name").eq("id", id).maybeSingle();
+  if (!t) return fail("이미 삭제된 계정이에요.", 404);
+  // 이 사람만 쓰는 영상 파일 고르기 (다른 사람 기록·보관함·받은 영상에 쓰인 파일은 남김)
+  const [{ data: recs }, { data: lib }, { data: inbox }] = await Promise.all([
+    db.from("vball_records").select("video_filename").eq("trainee_id", id),
+    db.from("vball_video_library").select("video_filename").eq("owner_trainee_id", id).eq("status", "saved"),
+    db.from("vball_shared_videos").select("video_filename").eq("to_trainee_id", id).eq("status", "pending"),
+  ]);
+  const files = [...new Set([...(recs || []), ...(lib || []), ...(inbox || [])].map((r: any) => r.video_filename).filter(Boolean))] as string[];
+  const mine: string[] = [];
+  for (const f of files) {
+    const [{ count: c1 }, { count: c2 }, { count: c3 }] = await Promise.all([
+      db.from("vball_records").select("id", { count: "exact", head: true }).eq("video_filename", f).neq("trainee_id", id),
+      db.from("vball_video_library").select("id", { count: "exact", head: true }).eq("video_filename", f).neq("owner_trainee_id", id),
+      db.from("vball_shared_videos").select("id", { count: "exact", head: true }).eq("video_filename", f).neq("to_trainee_id", id),
+    ]);
+    if (!c1 && !c2 && !c3) mine.push(f);
+  }
+  // 기록 삭제 → 계정 삭제 (보관함·받은 영상은 계정 삭제 시 함께 지워짐)
+  const steps: [string, string][] = [["vball_records", "trainee_id"], ["sv_diary", "trainee_id"], ["sv_survey", "trainee_id"], ["sv_reviews", "trainee_id"], ["sv_notice_reads", "trainee_id"], ["sv_video_logs", "trainee_id"]];
+  for (const [tb, col] of steps) {
+    const { error } = await db.from(tb).delete().eq(col, id);
+    if (error) return fail(`기록을 지우는 중 문제가 생겼어요 (${tb}): ${error.message}`, 500);
+  }
+  const { error } = await db.from("vball_trainees").delete().eq("id", id);
+  if (error) return fail("계정을 지우지 못했어요: " + error.message, 500);
+  let removed = 0;
+  for (const f of mine) if (await nasDelete(f)) removed++;
+  return json({ ok: true, files: mine.length, files_removed: removed });
+}
+
 /* ---------------- 공지사항 ---------------- */
 const visibleTo = (batch: string | null) => (n: any) => !batch || overlaps(batchesOf(batch), n.batches);
 async function noticesList(me: Trainee | null, role: string) {
@@ -469,11 +523,10 @@ Deno.serve(async (req) => {
       if (a === "admin_ai_master") return await aiMasterSave(b);
       if (a === "admin_trainee") return await traineeSave(b);
       if (a === "admin_trainee_bulk") return await traineeBulk(b);
+      if (a === "admin_trainee_check") return await traineeCheck(Number(b.id));
       if (a === "admin_trainee_delete") {
         if (s.trainee && Number(b.id) === s.trainee.id) return fail("본인 계정은 삭제할 수 없어요.");
-        await db.from("sv_survey").delete().eq("trainee_id", Number(b.id));
-        const { error } = await db.from("vball_trainees").delete().eq("id", Number(b.id));
-        return error ? fail("삭제하지 못했어요.", 500) : json({ ok: true });
+        return await traineeDelete(Number(b.id));
       }
       if (a === "admin_survey") return await surveyList();
       if (a === "admin_videos") {

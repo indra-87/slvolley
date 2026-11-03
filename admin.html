@@ -193,6 +193,7 @@ td.nw{white-space:nowrap}
           <button class="btn g sm" id="pXls"><i class="fa-solid fa-file-excel"></i> 명단 저장</button>
         </div>
       </div>
+      <p class="hint" style="margin:-4px 0 10px">🗑 <b>삭제</b>하면 그 사람의 AI 분석 기록·일기·조사·후기까지 모두 지워져요. 기록만 남기고 싶을 경우 <b>[중지]</b>를 쓰시면 됩니다.</p>
       <div class="scroll"><table class="cards"><thead><tr><th>이름</th><th>기수</th><th>코드</th><th>계정</th><th>AI 개인 설정</th><th>희망 조사</th><th></th></tr></thead><tbody id="pT"></tbody></table></div>
     </div>
   </section>
@@ -432,13 +433,29 @@ function renderPeople() {
       <td class="nw"><button class="btn g sm" data-a="e">수정</button> <button class="btn g sm" data-a="t">${t.active ? '중지' : '사용'}</button> <button class="btn d sm" data-a="d">삭제</button></td>`;
     tr.querySelector('[data-a=e]').onclick = () => editP(t);
     tr.querySelector('[data-a=t]').onclick = async () => { const d = await api('admin_trainee', { ...t, active: !t.active }); if (!d.ok) alert(d.message); load(); };
-    tr.querySelector('[data-a=d]').onclick = async () => {
-      if (!confirm(`${t.name} 님을 삭제할까요?\n희망 조사 응답도 함께 지워지고, 더 이상 로그인할 수 없어요.`)) return;
-      const d = await api('admin_trainee_delete', { id: t.id }); if (!d.ok) alert(d.message); load();
-    };
+    tr.querySelector('[data-a=d]').onclick = () => deleteP(t);
     tb.append(tr);
   });
   if (!S) api('admin_survey').then(d => { if (d.ok) { S = d; surveyIds = new Set(d.rows.filter(r => r.survey).map(r => r.id)); renderPeople(); } });
+}
+async function deleteP(t) {
+  const c = await api('admin_trainee_check', { id: t.id });
+  if (!c.ok) return alert(c.message || '확인하지 못했어요.');
+  const k = c.counts, lines = [];
+  if (k.records) lines.push(`· AI 동작 분석 성장 기록 ${k.records}건 (영상 포함)`);
+  if (k.library) lines.push(`· 영상 보관함 ${k.library}개`);
+  if (k.shared) lines.push(`· 아직 확인 안 한 받은 영상 ${k.shared}개`);
+  if (k.diary) lines.push(`· 배구일기 ${k.diary}편`);
+  if (k.survey) lines.push('· 연습 희망 조사 응답');
+  if (k.review) lines.push('· 연수 후기');
+  const msg = `${t.name} 님을 삭제할까요?\n\n` +
+    (lines.length ? `아래 기록도 함께 지워지고 되돌릴 수 없어요.\n${lines.join('\n')}\n\n` : '남아 있는 기록은 없어요.\n\n') +
+    `기록만 남기고 싶을 경우 [중지]를 쓰시면 됩니다.\n(중지하면 로그인만 막히고 기록은 그대로 남아요.)`;
+  if (!confirm(msg)) return;
+  const d = await api('admin_trainee_delete', { id: t.id });
+  if (!d.ok) alert(d.message || '삭제하지 못했어요.');
+  else alert(`${t.name} 님을 삭제했어요.` + (d.files && d.files_removed < d.files ? `\n(영상 파일 ${d.files - d.files_removed}개는 NAS에서 지우지 못했어요.)` : ''));
+  load();
 }
 function editP(t) {
   editId = t.id; $('pFormTitle').textContent = `수정: ${t.name}`;
