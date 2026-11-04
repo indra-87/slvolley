@@ -95,6 +95,12 @@ td.nw{white-space:nowrap}
 .who .wh{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800;font-size:13.5px;margin-bottom:6px}
 .who .wh button{border:0;background:none;color:var(--dim);font-weight:700;font-size:12.5px}
 .who .pchip{cursor:default;background:#fff;border:1px solid #FFD5C8}
+.who .wg{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:1px dashed #FFD5C8}
+.who .wg:first-of-type{border-top:0}
+.who .wg>b{flex:none;width:64px;font-size:13px;padding-top:4px}
+.who .wg>b span{font-weight:500;color:var(--dim);font-size:12px}
+.who .wg>div{flex:1;min-width:0}
+.who .pchip small{color:var(--dim)}
 tr.hit td{background:#FFF7F4}
 .cgrp{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--line)}
 .cgrp:last-child{border-bottom:0}
@@ -617,9 +623,15 @@ async function loadSurvey() {
 }
 let selPos = ''; const ANY = '__any';
 function whoBox(title, people, kind) {
-  const list = [...people].sort((a, b) => ko(a.batch, b.batch) || ko(a.name, b.name));
+  const list = [...people].sort((a, b) => ko(a.name, b.name));
+  // 기수별로 나눠 보여 줌 (두 기수 모두 참여한 분은 양쪽에 표시)
+  const bs = [...new Set(list.flatMap(r => bl(r)))].sort(ko);
+  const groups = bs.map(b => {
+    const g = list.filter(r => inB(r, b));
+    return `<div class="wg"><b>${esc(b)} <span>${g.length}명</span></b><div>${g.map(r => `<span class="pchip">${esc(r.name)}${bl(r).length > 1 ? ' <small>(' + esc(bt(r)) + ')</small>' : ''}</span>`).join('')}</div></div>`;
+  }).join('');
   return `<div class="who"><div class="wh"><span>${esc(title)} · ${list.length}명</span><button type="button" data-x="${kind}">✕ 닫기</button></div>
-    ${list.map(r => `<span class="pchip">${esc(r.name)} · ${esc(bt(r))}</span>`).join('') || '<span class="hint">없어요.</span>'}</div>`;
+    ${groups || '<span class="hint">없어요.</span>'}</div>`;
 }
 function renderSurvey() {
   const d = S, b = $('sF').value, part = $('sPart').value;
@@ -633,7 +645,7 @@ function renderSurvey() {
   // 파트별 사람
   $('sParts').querySelectorAll('.br').forEach((el, k) => { const x = d.parts[k]; el.classList.toggle('on', part === x); el.onclick = () => { $('sPart').value = part === x ? '' : x; renderSurvey(); }; });
   const partPeople = part ? done.filter(r => r.survey.part === part) : [];
-  $('sPartWho').innerHTML = part ? whoBox(`🏐 ${part}를 고른 사람`, partPeople, 'part') : '';
+  $('sPartWho').innerHTML = part ? whoBox(`🏐 ${part} 희망`, partPeople, 'part') : '';
   // 포지션별 사람
   const byPos = Object.fromEntries(d.positions.map(x => [x, []])), anyP = [];
   done.forEach(r => { const ps = r.survey.positions || []; ps.forEach(x => byPos[x] && byPos[x].push(r)); if (!ps.length) anyP.push(r); });
