@@ -80,7 +80,7 @@ td.nw{white-space:nowrap}
 .bars .bt i{display:block;height:100%;background:var(--coral);border-radius:6px}
 .mc{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--navy-2);border-radius:14px;padding:24px 10px 10px;position:relative}
 .mc::before{content:"네트";position:absolute;top:5px;left:0;right:0;text-align:center;font-size:11px;color:#A9B4CC;letter-spacing:.3em}
-.mc .pc{background:rgba(255,255,255,.08);color:#fff;border:2px solid transparent;border-radius:10px;padding:8px 6px;text-align:center;font-weight:700;font-size:13px;min-height:96px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.mc .pc{background:rgba(255,255,255,.08);color:#fff;border:2px solid transparent;border-radius:10px;padding:8px 6px;text-align:center;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
 .mc .pc:hover{background:rgba(255,255,255,.16)}
 .mc .pc.on{border-color:var(--coral);background:rgba(255,107,74,.18)}
 .mc .pc.zero{opacity:.55;cursor:default}
@@ -243,7 +243,7 @@ tr.hit td{background:#FFF7F4}
     <div class="stats" id="sStats"></div>
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
       <div class="card"><h3>① 연습 희망 파트</h3><p class="hint">막대를 누르면 그 파트를 고른 사람이 보여요.</p><div class="bars" id="sParts"></div><div id="sPartWho"></div></div>
-      <div class="card"><h3>② 시스템훈련 희망 포지션 (중복 선택)</h3><p class="hint">칸마다 희망한 사람 이름이 보여요. 칸을 누르면 아래 응답 목록도 그 사람들만 걸러져요.</p>
+      <div class="card"><h3>② 시스템훈련 희망 포지션 (중복 선택)</h3><p class="hint">칸을 누르면 희망한 사람이 보이고, 아래 응답 목록도 그 사람들만 걸러져요.</p>
         <button class="anybtn" id="sAny"></button><div class="mc" id="sCourt"></div><div id="sPosWho"></div></div>
     </div>
     <div class="card">
@@ -637,12 +637,9 @@ function renderSurvey() {
   // 포지션별 사람
   const byPos = Object.fromEntries(d.positions.map(x => [x, []])), anyP = [];
   done.forEach(r => { const ps = r.survey.positions || []; ps.forEach(x => byPos[x] && byPos[x].push(r)); if (!ps.length) anyP.push(r); });
-  const nm = r => esc(r.name) + (b ? '' : `<span style="opacity:.6"> ${esc(bt(r))}</span>`);
-  const MAXN = 6;
   $('sCourt').innerHTML = d.positions.map(x => {
-    const ps = byPos[x].sort((p, q) => ko(p.name, q.name));
-    const names = ps.slice(0, MAXN).map(nm).join(', ') + (ps.length > MAXN ? ` 외 ${ps.length - MAXN}명` : '');
-    return `<button type="button" class="pc ${selPos === x ? 'on' : ''} ${ps.length ? '' : 'zero'}" data-p="${esc(x)}"><b>${ps.length}</b>${esc(x)}<span class="nm">${names}</span></button>`;
+    const ps = byPos[x];
+    return `<button type="button" class="pc ${selPos === x ? 'on' : ''} ${ps.length ? '' : 'zero'}" data-p="${esc(x)}" title="${ps.length ? '눌러서 희망자 보기' : ''}"><b>${ps.length}</b>${esc(x)}</button>`;
   }).join('');
   $('sCourt').querySelectorAll('.pc').forEach(el => el.onclick = () => { if (!byPos[el.dataset.p].length) return; selPos = selPos === el.dataset.p ? '' : el.dataset.p; renderSurvey(); });
   $('sAny').textContent = `상관없음 (선택 안 함) ${anyP.length}명`;
