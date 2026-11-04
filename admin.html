@@ -80,8 +80,22 @@ td.nw{white-space:nowrap}
 .bars .bt i{display:block;height:100%;background:var(--coral);border-radius:6px}
 .mc{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--navy-2);border-radius:14px;padding:24px 10px 10px;position:relative}
 .mc::before{content:"네트";position:absolute;top:5px;left:0;right:0;text-align:center;font-size:11px;color:#A9B4CC;letter-spacing:.3em}
-.mc div{background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:10px 4px;text-align:center;font-weight:700;font-size:13px}
-.mc div b{display:block;font-size:22px;font-family:'Barlow Condensed';color:var(--coral)}
+.mc .pc{background:rgba(255,255,255,.08);color:#fff;border:2px solid transparent;border-radius:10px;padding:8px 6px;text-align:center;font-weight:700;font-size:13px;min-height:96px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.mc .pc:hover{background:rgba(255,255,255,.16)}
+.mc .pc.on{border-color:var(--coral);background:rgba(255,107,74,.18)}
+.mc .pc.zero{opacity:.55;cursor:default}
+.mc .pc b{display:block;font-size:22px;line-height:1.1;font-family:'Barlow Condensed';color:var(--coral)}
+.mc .pc .nm{font-size:11.5px;font-weight:500;color:#C9D2E6;line-height:1.45;word-break:keep-all}
+.anybtn{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-weight:700;font-size:12.5px;margin:0 0 8px}
+.anybtn.on{border-color:var(--coral);background:var(--coral-l);color:var(--coral-d)}
+.bars .br{cursor:pointer;border-radius:6px;padding:2px 4px}
+.bars .br:hover{background:#F5F7FA}
+.bars .br.on{background:var(--coral-l)}
+.who{background:#FFF7F4;border:1.5px solid #FFD5C8;border-radius:12px;padding:10px 12px;margin-top:10px}
+.who .wh{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800;font-size:13.5px;margin-bottom:6px}
+.who .wh button{border:0;background:none;color:var(--dim);font-weight:700;font-size:12.5px}
+.who .pchip{cursor:default;background:#fff;border:1px solid #FFD5C8}
+tr.hit td{background:#FFF7F4}
 .cgrp{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--line)}
 .cgrp:last-child{border-bottom:0}
 .cgrp .gh{flex:none;width:92px;padding-top:4px}
@@ -228,11 +242,12 @@ td.nw{white-space:nowrap}
     </div>
     <div class="stats" id="sStats"></div>
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
-      <div class="card"><h3>① 연습 희망 파트</h3><div class="bars" id="sParts"></div></div>
-      <div class="card"><h3>② 시스템훈련 희망 포지션 (중복 선택)</h3><p class="hint" id="sAny"></p><div class="mc" id="sCourt"></div></div>
+      <div class="card"><h3>① 연습 희망 파트</h3><p class="hint">막대를 누르면 그 파트를 고른 사람이 보여요.</p><div class="bars" id="sParts"></div><div id="sPartWho"></div></div>
+      <div class="card"><h3>② 시스템훈련 희망 포지션 (중복 선택)</h3><p class="hint">칸마다 희망한 사람 이름이 보여요. 칸을 누르면 아래 응답 목록도 그 사람들만 걸러져요.</p>
+        <button class="anybtn" id="sAny"></button><div class="mc" id="sCourt"></div><div id="sPosWho"></div></div>
     </div>
     <div class="card">
-      <div class="row" style="justify-content:space-between"><h3 style="margin:0">응답 목록</h3>
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">응답 목록 <span class="hint" id="sListHint" style="font-weight:700;color:var(--coral-d)"></span></h3>
         <select id="sPart" class="field" style="width:auto"><option value="">모든 파트</option></select></div>
       <div class="scroll" style="margin-top:10px"><table class="cards"><thead><tr><th>이름</th><th>기수</th><th>파트</th><th>희망 포지션</th><th>하고 싶은 말</th><th>제출</th></tr></thead><tbody id="sT"></tbody></table></div>
     </div>
@@ -600,6 +615,12 @@ async function loadSurvey() {
   const p = $('sPart'), pc = p.value; p.innerHTML = '<option value="">모든 파트</option>' + d.parts.map(x => `<option>${esc(x)}</option>`).join(''); p.value = pc;
   renderSurvey();
 }
+let selPos = ''; const ANY = '__any';
+function whoBox(title, people, kind) {
+  const list = [...people].sort((a, b) => ko(a.batch, b.batch) || ko(a.name, b.name));
+  return `<div class="who"><div class="wh"><span>${esc(title)} · ${list.length}명</span><button type="button" data-x="${kind}">✕ 닫기</button></div>
+    ${list.map(r => `<span class="pchip">${esc(r.name)} · ${esc(bt(r))}</span>`).join('') || '<span class="hint">없어요.</span>'}</div>`;
+}
 function renderSurvey() {
   const d = S, b = $('sF').value, part = $('sPart').value;
   const rows = d.rows.filter(r => r.active && inB(r, b));
@@ -609,21 +630,41 @@ function renderSurvey() {
   const pc = Object.fromEntries(d.parts.map(x => [x, 0])); done.forEach(r => pc[r.survey.part] = (pc[r.survey.part] || 0) + 1);
   const mx = Math.max(1, ...Object.values(pc));
   $('sParts').innerHTML = d.parts.map(x => `<div class="br"><b>${esc(x)}</b><div class="bt"><i style="width:${pc[x] / mx * 100}%"></i></div><span>${pc[x]}명</span></div>`).join('');
-  const pos = Object.fromEntries(d.positions.map(x => [x, 0])); let any = 0;
-  done.forEach(r => { (r.survey.positions || []).forEach(x => pos[x]++); if (!(r.survey.positions || []).length) any++; });
-  $('sCourt').innerHTML = d.positions.map(x => `<div><b>${pos[x]}</b>${esc(x)}</div>`).join('');
-  $('sAny').textContent = `'상관없음'(선택 안 함) ${any}명`;
-  const list = done.filter(r => !part || r.survey.part === part).sort((a, b2) => ko(a.batch, b2.batch) || ko(a.name, b2.name));
-  $('sT').innerHTML = list.length ? list.map(r => `<tr><td data-l="이름" class="nw"><b>${esc(r.name)}</b></td><td data-l="기수"><span class="chip">${esc(bt(r))}</span></td>
-    <td data-l="파트" class="nw">${esc(r.survey.part)}</td><td data-l="포지션">${esc((r.survey.positions || []).join(', ') || '상관없음')}</td>
+  // 파트별 사람
+  $('sParts').querySelectorAll('.br').forEach((el, k) => { const x = d.parts[k]; el.classList.toggle('on', part === x); el.onclick = () => { $('sPart').value = part === x ? '' : x; renderSurvey(); }; });
+  const partPeople = part ? done.filter(r => r.survey.part === part) : [];
+  $('sPartWho').innerHTML = part ? whoBox(`🏐 ${part}를 고른 사람`, partPeople, 'part') : '';
+  // 포지션별 사람
+  const byPos = Object.fromEntries(d.positions.map(x => [x, []])), anyP = [];
+  done.forEach(r => { const ps = r.survey.positions || []; ps.forEach(x => byPos[x] && byPos[x].push(r)); if (!ps.length) anyP.push(r); });
+  const nm = r => esc(r.name) + (b ? '' : `<span style="opacity:.6"> ${esc(bt(r))}</span>`);
+  const MAXN = 6;
+  $('sCourt').innerHTML = d.positions.map(x => {
+    const ps = byPos[x].sort((p, q) => ko(p.name, q.name));
+    const names = ps.slice(0, MAXN).map(nm).join(', ') + (ps.length > MAXN ? ` 외 ${ps.length - MAXN}명` : '');
+    return `<button type="button" class="pc ${selPos === x ? 'on' : ''} ${ps.length ? '' : 'zero'}" data-p="${esc(x)}"><b>${ps.length}</b>${esc(x)}<span class="nm">${names}</span></button>`;
+  }).join('');
+  $('sCourt').querySelectorAll('.pc').forEach(el => el.onclick = () => { if (!byPos[el.dataset.p].length) return; selPos = selPos === el.dataset.p ? '' : el.dataset.p; renderSurvey(); });
+  $('sAny').textContent = `상관없음 (선택 안 함) ${anyP.length}명`;
+  $('sAny').className = 'anybtn' + (selPos === ANY ? ' on' : '');
+  $('sAny').onclick = () => { if (!anyP.length) return; selPos = selPos === ANY ? '' : ANY; renderSurvey(); };
+  const posPeople = selPos === ANY ? anyP : selPos ? byPos[selPos] || [] : [];
+  $('sPosWho').innerHTML = selPos ? whoBox(selPos === ANY ? '🤷 포지션 상관없음' : `📍 ${selPos} 희망`, posPeople, 'pos') : '';
+  document.querySelectorAll('.who [data-x]').forEach(bn => bn.onclick = () => { if (bn.dataset.x === 'pos') selPos = ''; else $('sPart').value = ''; renderSurvey(); });
+  // 응답 목록: 파트·포지션 선택으로 거르기
+  const hitIds = selPos ? new Set(posPeople.map(r => r.id)) : null;
+  const list = done.filter(r => (!part || r.survey.part === part) && (!hitIds || hitIds.has(r.id))).sort((a, b2) => ko(a.batch, b2.batch) || ko(a.name, b2.name));
+  $('sListHint').textContent = (part || selPos) ? `· ${[part, selPos === ANY ? '포지션 상관없음' : selPos].filter(Boolean).join(' + ')} (${list.length}명)` : '';
+  $('sT').innerHTML = list.length ? list.map(r => `<tr class="${hitIds ? 'hit' : ''}"><td data-l="이름" class="nw"><b>${esc(r.name)}</b></td><td data-l="기수"><span class="chip">${esc(bt(r))}</span></td>
+    <td data-l="파트" class="nw">${esc(r.survey.part)}</td><td data-l="포지션">${(r.survey.positions || []).map(x => x === selPos ? `<b style="color:var(--coral-d)">${esc(x)}</b>` : esc(x)).join(', ') || '상관없음'}</td>
     <td data-l="하고 싶은 말" style="white-space:pre-wrap;min-width:220px">${esc(r.survey.memo || '')}</td>
     <td data-l="제출" class="nw hint">${new Date(r.survey.updated_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td></tr>`).join('')
-    : '<tr><td colspan="6" class="hint">아직 응답이 없어요.</td></tr>';
+    : '<tr><td colspan="6" class="hint">해당하는 응답이 없어요.</td></tr>';
   const no = rows.filter(r => !r.survey);
   $('sNoCnt').textContent = `(${no.length}명)`;
   $('sNo').innerHTML = no.map(r => `<span class="pchip" style="cursor:default">${esc(r.name)} · ${esc(bt(r))}</span>`).join('') || '<span class="hint">모두 제출했어요! 🎉</span>';
 }
-$('sF').onchange = renderSurvey; $('sPart').onchange = renderSurvey; $('sReload').onclick = loadSurvey;
+$('sF').onchange = () => { selPos = ''; renderSurvey(); }; $('sPart').onchange = renderSurvey; $('sReload').onclick = loadSurvey;
 $('sXls').onclick = () => {
   if (!S || typeof XLSX === 'undefined') return;
   const rows = [['이름', '기수', '희망 파트', '희망 포지션', '하고 싶은 말', '제출 시각']].concat(
